@@ -5,7 +5,8 @@
 #include "ui/PathView.h"
 #include "ui/Theme.h"
 
-class fD1STAudioProcessorEditor : public juce::AudioProcessorEditor
+class fD1STAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                  public juce::DragAndDropContainer
 {
 public:
     explicit fD1STAudioProcessorEditor (fD1STAudioProcessor&);
@@ -43,25 +44,43 @@ private:
     void layoutContent();
     void bindKnob (Knob& k, const char* id, const juce::String& name);
     void setListen (int id);
+    void rebindLens();
+    void pushUndo();
+    void doUndo();
+    void doRedo();
+    void copyAtoB();
+    void morphAB();
 
     fD1STAudioProcessor& proc;
     PanelLnF panelLnF;
     Content content { *this };
     int baseW = 0, baseH = 0;
     juce::OpenGLContext gl;
+    bool gpuOk = false;
 
     juce::Image logo;
     PathView path { proc };
     FocusView focus { proc };
     Knob mix, out, globDrive, drive, heat, spread, motionAmt, bias;
-    juce::ComboBox osBox, styleBox, routeBox, destBox;
-    juce::Label osLabel, styleLabel, routeLabel, gpuBanner, wireLabel;
+    Knob blend, tone, cavTime, cavAmt, cavNote, comp, lensMix, lensDyn, lensLevel, lensPan;
+    Knob lensFb, lensFbHz, filtHz, filtQ, bass, mid, treble, presence, xover1, xover2, xover3, abMorph;
+    juce::ComboBox osBox, styleBox, routeBox, destBox, programBox, chmodeBox, fbModeBox, filtBox, stampBox, srcBox;
+    juce::Label osLabel, styleLabel, routeLabel, gpuBanner, wireLabel, progLabel;
     juce::Slider wireDepth;
-    juce::ToggleButton bypass, wireOn;
-    juce::TextButton listenW, listenD, listenE, listenC;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> osAtt, styleAtt, routeAtt;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAtt;
+    juce::ToggleButton bypass, wireOn, linphase, colorcomp, cavSafe, lensOn, lensMute, lensSolo, midiLearn, helpBtn;
+    juce::TextButton listenW, listenD, listenE, listenC, undoBtn, redoBtn, abA, abB, fullBtn;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> osAtt, styleAtt, routeAtt, chmodeAtt, fbModeAtt, filtAtt;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAtt, linAtt, colorAtt, safeAtt, onAtt, muteAtt, soloAtt;
     juce::TooltipWindow tip { this, 400 };
+    juce::Label helpText;
+
+    juce::Array<juce::MemoryBlock> undoStack;
+    int undoPos = -1;
+    juce::MemoryBlock snapA, snapB;
+    bool showingB = false;
+    bool learning = false;
+    juce::String lastParam;
+    bool showHelp = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (fD1STAudioProcessorEditor)
 };

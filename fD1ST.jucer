@@ -24,6 +24,8 @@
         <FILE id="clpH001" name="Clip.h" compile="0" resource="0" file="src/dsp/Clip.h"/>
         <FILE id="oneH001" name="OnePole.h" compile="0" resource="0" file="src/dsp/OnePole.h"/>
         <FILE id="biqH001" name="Biquad.h" compile="0" resource="0" file="src/dsp/Biquad.h"/>
+        <FILE id="cmpH001" name="Comp.h" compile="0" resource="0" file="src/dsp/Comp.h"/>
+        <FILE id="firH001" name="FirXover.h" compile="0" resource="0" file="src/dsp/FirXover.h"/>
         <FILE id="styH001" name="Style.h" compile="0" resource="0" file="src/dsp/Style.h"/>
         <FILE id="motH001" name="Motion.h" compile="0" resource="0" file="src/dsp/Motion.h"/>
         <FILE id="lnsH001" name="LensProcessor.h" compile="0" resource="0"
@@ -39,8 +41,6 @@
       </GROUP>
       <GROUP id="uiGrp01" name="ui">
         <FILE id="thmH001" name="Theme.h" compile="0" resource="0" file="src/ui/Theme.h"/>
-        <FILE id="verH001" name="VersionCompare.h" compile="0" resource="0"
-              file="src/ui/VersionCompare.h"/>
         <FILE id="focH001" name="FocusView.h" compile="0" resource="0" file="src/ui/FocusView.h"/>
         <FILE id="pthH001" name="PathView.h" compile="0" resource="0" file="src/ui/PathView.h"/>
       </GROUP>
