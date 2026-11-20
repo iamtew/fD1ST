@@ -2,8 +2,8 @@
 
 namespace
 {
-constexpr int kEditorW = 720;
-constexpr int kEditorH = 300;
+constexpr int kEditorW = 1100;
+constexpr int kEditorH = 720;
 constexpr int kPad = 10;
 constexpr int kTitleH = 40;
 }
@@ -98,36 +98,134 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     bindKnob (out, ParamID::glob_out_db, "Output");
     bindKnob (globDrive, ParamID::glob_drive_db, "Drive");
     bindKnob (drive, ParamID::cDriveDb[0], "Lens Drive");
+    bindKnob (heat, ParamID::glob_heat, "Heat");
+    bindKnob (spread, ParamID::glob_spread, "Spread");
+    bindKnob (motionAmt, ParamID::glob_motion, "Motion");
+    bindKnob (bias, ParamID::cBias[0], "Bias");
 
+    auto colourCombo = [&] (juce::ComboBox& b)
+    {
+        b.setColour (juce::ComboBox::backgroundColourId, kWell);
+        b.setColour (juce::ComboBox::textColourId, kWhite);
+        b.setColour (juce::ComboBox::outlineColourId, kForest);
+        b.setColour (juce::ComboBox::arrowColourId, kEmerald);
+    };
+    colourCombo (osBox);
+    colourCombo (styleBox);
+    colourCombo (routeBox);
+    colourCombo (destBox);
     osLabel.setText ("OS", juce::dontSendNotification);
-    osLabel.setJustificationType (juce::Justification::centred);
-    osLabel.setColour (juce::Label::textColourId, kSage);
-    osBox.setColour (juce::ComboBox::backgroundColourId, kWell);
-    osBox.setColour (juce::ComboBox::textColourId, kWhite);
-    osBox.setColour (juce::ComboBox::outlineColourId, kForest);
-    osBox.setColour (juce::ComboBox::arrowColourId, kEmerald);
+    styleLabel.setText ("Style", juce::dontSendNotification);
+    routeLabel.setText ("Path", juce::dontSendNotification);
+    for (auto* l : { &osLabel, &styleLabel, &routeLabel, &wireLabel })
+    {
+        l->setJustificationType (juce::Justification::centred);
+        l->setColour (juce::Label::textColourId, kSage);
+        content.addAndMakeVisible (*l);
+    }
     osAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (
         proc.apvts, ParamID::glob_os, osBox);
+    styleAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (
+        proc.apvts, ParamID::cStyle[0], styleBox);
+    routeAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (
+        proc.apvts, ParamID::glob_route, routeBox);
+    destBox.addItem (ParamID::glob_mix, 1);
+    destBox.setSelectedId (1, juce::dontSendNotification);
+    destBox.onChange = [this]
+    {
+        proc.motion.tree.getChildWithName ("wire0").setProperty ("dst", destBox.getText(), nullptr);
+    };
+    wireLabel.setText ("Wiring", juce::dontSendNotification);
+    wireDepth.setRange (-1.0, 1.0, 0.01);
+    wireDepth.onValueChange = [this]
+    {
+        proc.motion.tree.getChildWithName ("wire0").setProperty ("depth", wireDepth.getValue(), nullptr);
+    };
+    wireOn.setButtonText ("Orbit->Mix");
+    wireOn.onClick = [this]
+    {
+        auto w = proc.motion.tree.getChildWithName ("wire0");
+        w.setProperty ("on", wireOn.getToggleState(), nullptr);
+        w.setProperty ("dst", ParamID::glob_mix, nullptr);
+    };
     content.addAndMakeVisible (osBox);
-    content.addAndMakeVisible (osLabel);
+    content.addAndMakeVisible (styleBox);
+    content.addAndMakeVisible (routeBox);
+    content.addAndMakeVisible (destBox);
+    content.addAndMakeVisible (wireDepth);
+    content.addAndMakeVisible (wireOn);
+
+    listenW.setButtonText ("W");
+    listenD.setButtonText ("Dry");
+    listenE.setButtonText ("E");
+    listenC.setButtonText ("C");
+    listenW.onClick = [this] { setListen (0); };
+    listenD.onClick = [this] { setListen (1); };
+    listenE.onClick = [this] { setListen (2); };
+    listenC.onClick = [this] { setListen (3); };
+    content.addAndMakeVisible (listenW);
+    content.addAndMakeVisible (listenD);
+    content.addAndMakeVisible (listenE);
+    content.addAndMakeVisible (listenC);
+
+    gpuBanner.setText ("GPU off — reduced sight", juce::dontSendNotification);
+    gpuBanner.setColour (juce::Label::textColourId, kSage);
+    gpuBanner.setVisible (false);
+    content.addAndMakeVisible (gpuBanner);
 
     bypass.setButtonText ("Bypass");
     bypassAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (
         proc.apvts, ParamID::glob_bypass, bypass);
     content.addAndMakeVisible (bypass);
+    content.addAndMakeVisible (path);
+    content.addAndMakeVisible (focus);
 
     addAndMakeVisible (content);
+    gl.attachTo (*this);
+    setWantsKeyboardFocus (true);
     baseW = kEditorW;
     baseH = kEditorH;
     setSize (baseW, baseH);
     setResizable (true, true);
-    setResizeLimits (baseW / 2, baseH / 2, baseW * 3, baseH * 3);
+    setResizeLimits (900, 560, baseW * 2, baseH * 2);
     getConstrainer()->setFixedAspectRatio ((double) baseW / (double) baseH);
 }
 
 fD1STAudioProcessorEditor::~fD1STAudioProcessorEditor()
 {
+    gl.detach();
     setLookAndFeel (nullptr);
+}
+
+void fD1STAudioProcessorEditor::setListen (int id)
+{
+    if (auto* p = proc.apvts.getParameter (ParamID::glob_listen))
+        p->setValueNotifyingHost (p->convertTo0to1 ((float) id));
+}
+
+bool fD1STAudioProcessorEditor::keyPressed (const juce::KeyPress& k)
+{
+    if (k.getTextCharacter() == 'w' || k.getTextCharacter() == 'W')
+    {
+        setListen (0);
+        return true;
+    }
+    if (k.getTextCharacter() == 'd' && k.getModifiers().isShiftDown())
+    {
+        setListen (1);
+        return true;
+    }
+    if (k.getTextCharacter() == 'e' || k.getTextCharacter() == 'E')
+    {
+        setListen (2);
+        return true;
+    }
+    if (k.getTextCharacter() == 'c' || k.getTextCharacter() == 'C')
+    {
+        setListen (3);
+        return true;
+    }
+    return false;
 }
 
 void fD1STAudioProcessorEditor::paint (juce::Graphics&) {}
@@ -171,15 +269,43 @@ void fD1STAudioProcessorEditor::layoutContent()
     auto osArea = bar.removeFromRight (120);
     osLabel.setBounds (osArea.removeFromLeft (28));
     osBox.setBounds (osArea);
+    listenC.setBounds (bar.removeFromRight (36));
+    listenE.setBounds (bar.removeFromRight (36));
+    listenD.setBounds (bar.removeFromRight (44));
+    listenW.setBounds (bar.removeFromRight (36));
+    routeLabel.setBounds (bar.removeFromLeft (36));
+    routeBox.setBounds (bar.removeFromLeft (100));
+    gpuBanner.setBounds (bar);
     r.removeFromTop (8);
-    const int col = r.getWidth() / 4;
+    path.setBounds (r.removeFromTop (72));
+    r.removeFromTop (8);
+    auto focusR = r.removeFromTop (280);
+    focus.setBounds (focusR.removeFromLeft (360));
+    auto knobs = focusR;
+    auto row1 = knobs.removeFromTop (120);
+    const int col = row1.getWidth() / 4;
     auto place = [&] (Knob& k, juce::Rectangle<int> cell)
     {
         k.l.setBounds (cell.removeFromTop (16));
         k.s.setBounds (cell);
     };
-    place (mix, r.removeFromLeft (col).reduced (6, 0));
-    place (out, r.removeFromLeft (col).reduced (6, 0));
-    place (globDrive, r.removeFromLeft (col).reduced (6, 0));
-    place (drive, r.reduced (6, 0));
+    place (mix, row1.removeFromLeft (col).reduced (4, 0));
+    place (out, row1.removeFromLeft (col).reduced (4, 0));
+    place (globDrive, row1.removeFromLeft (col).reduced (4, 0));
+    place (drive, row1.reduced (4, 0));
+    auto row2 = knobs.removeFromTop (120);
+    const int col2 = row2.getWidth() / 4;
+    place (heat, row2.removeFromLeft (col2).reduced (4, 0));
+    place (spread, row2.removeFromLeft (col2).reduced (4, 0));
+    place (motionAmt, row2.removeFromLeft (col2).reduced (4, 0));
+    place (bias, row2.reduced (4, 0));
+    auto row3 = knobs.removeFromTop (28);
+    styleLabel.setBounds (row3.removeFromLeft (48));
+    styleBox.setBounds (row3.removeFromLeft (160));
+    r.removeFromTop (8);
+    auto motionRow = r.removeFromTop (28);
+    wireLabel.setBounds (motionRow.removeFromLeft (56));
+    wireOn.setBounds (motionRow.removeFromLeft (100));
+    destBox.setBounds (motionRow.removeFromLeft (120));
+    wireDepth.setBounds (motionRow);
 }

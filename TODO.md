@@ -8,17 +8,14 @@ Each numbered step is a **compiling VST3**. Do not skip ahead to 32× FIR. v1 sh
 
 - [x] Step 1 — Just + `.jucer`, burgundy editor, stereo thru, full host APVTS, GitHub, Pages (`docs/`)
 - [x] Step 2 — One route, Glow + makeup, Drive, mix, OS Off/Good
+- [x] Step 3 — Transfer lens viz (CPU) + meters
+- [x] Step 4 — Styles 1–33
+- [x] Step 5 — Stack / Split / Prism / Axis / Cavity + Ring
+- [x] Step 6 — Heat / Spread / Listen / Delta
+- [x] Step 7 — Path graph + GPU
+- [x] Step 8 — Motion ValueTree + one Orbit + Wiring
+- [x] Step 9 — Remaining sources, factory JSON, `--self-test` (spec §11)
 - [x] Catalog — stay off audio.stupid.systems until asked
-
-## Build order
-
-- [ ] Step 3 — Transfer lens viz (CPU) + meters
-- [ ] Step 4 — Styles 1–33
-- [ ] Step 5 — Stack / Split / Prism / Axis / Cavity + Ring
-- [ ] Step 6 — Heat / Spread / Listen / Delta
-- [ ] Step 7 — Path graph + GPU
-- [ ] Step 8 — Motion ValueTree + one Orbit + Wiring
-- [ ] Step 9 — Remaining sources, factory JSON, `--self-test` (spec §11)
 
 ## Meat Bag
 

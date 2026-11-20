@@ -1,6 +1,7 @@
 // JUCE-free check for IDs and choice tables. Compile with plain cl.
 #include "dsp/Names.h"
 #include "dsp/Shaper.h"
+#include "dsp/Style.h"
 #include "parameters/ParameterIDs.h"
 
 #include <cassert>
@@ -99,6 +100,14 @@ int main()
         const float r24 = fd1st::glowProbeRms (24.f, 1.f) * fd1st::glowMakeup (24.f);
         const float db = 20.f * std::log10 (std::max (1.0e-8f, r24 / std::max (1.0e-8f, r0)));
         assert (std::abs (db) <= 3.f);
+    }
+    {
+        fd1st::StyleState st {};
+        const float glow = fd1st::shapeStyle (0, 0.5f, 0.f, 48000.f, st);
+        assert (std::abs (glow - std::tanh (0.5f)) < 1.0e-5f);
+        const float crush = fd1st::shapeStyle (33, 0.8f, 0.5f, 48000.f, st);
+        assert (std::isfinite (crush));
+        assert (fd1st::peakNorm (31, 12.f, 48000.f) <= 1.0001f);
     }
 
     std::puts ("fd1st_check ok");

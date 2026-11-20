@@ -68,3 +68,7 @@ vs:
 
 check:
     cmd /c "call `"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat`" >nul && cl /nologo /EHsc /std:c++17 /I src tests\fd1st_check.cpp /Fo:tests\fd1st_check.obj /Fe:tests\fd1st_check.exe && tests\fd1st_check.exe"
+
+# Debug standalone. Exit 0 on pass.
+self-test: build-debug
+    & 'Builds\VisualStudio2022\x64\Debug\Standalone Plugin\fD1ST.exe' --self-test

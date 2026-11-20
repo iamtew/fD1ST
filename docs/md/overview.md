@@ -2,9 +2,9 @@
 
 fD1ST is DIST, a stereo distortion and saturation effect. Spoken name DIST. The leading f is fx. Never “fist.”
 
-Work in progress. Spec step 2: One-route Glow, makeup, Drive, mix, OS Off/Fast/Good. Path, Heat, and Motion land in later steps. The spec in the sidebar is the map.
+Work in progress. Path, Focus transfer lens, 34 styles, Heat/Spread/Listen, one Orbit. Superb still equals Good. The spec in the sidebar is the map.
 
-Mix is dry/wet against Glow. Bypass copies input to output.
+Bypass copies input to output. Keys: W wet, Shift+D dry, E delta, C caustic.
 
 This is the user book. Internals live under Spec, Architecture, and DSP notes.
 

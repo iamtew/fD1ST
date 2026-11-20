@@ -1,6 +1,8 @@
 #pragma once
 
 #include "PluginProcessor.h"
+#include "ui/FocusView.h"
+#include "ui/PathView.h"
 #include "ui/Theme.h"
 
 class fD1STAudioProcessorEditor : public juce::AudioProcessorEditor
@@ -11,6 +13,7 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+    bool keyPressed (const juce::KeyPress&) override;
 
 private:
     struct Content : public juce::Component
@@ -39,18 +42,24 @@ private:
     void paintContent (juce::Graphics&);
     void layoutContent();
     void bindKnob (Knob& k, const char* id, const juce::String& name);
+    void setListen (int id);
 
     fD1STAudioProcessor& proc;
     PanelLnF panelLnF;
     Content content { *this };
     int baseW = 0, baseH = 0;
+    juce::OpenGLContext gl;
 
     juce::Image logo;
-    Knob mix, out, drive, globDrive;
-    juce::ComboBox osBox;
-    juce::Label osLabel;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> osAtt;
-    juce::ToggleButton bypass;
+    PathView path { proc };
+    FocusView focus { proc };
+    Knob mix, out, globDrive, drive, heat, spread, motionAmt, bias;
+    juce::ComboBox osBox, styleBox, routeBox, destBox;
+    juce::Label osLabel, styleLabel, routeLabel, gpuBanner, wireLabel;
+    juce::Slider wireDepth;
+    juce::ToggleButton bypass, wireOn;
+    juce::TextButton listenW, listenD, listenE, listenC;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> osAtt, styleAtt, routeAtt;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAtt;
     juce::TooltipWindow tip { this, 400 };
 
