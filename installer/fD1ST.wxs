@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UpgradeCode stays fixed so a newer MSI replaces this install. -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="fD1ST"
+           Manufacturer="Stupid Audio"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="A3C91E04-7B52-4D18-8F6E-1C4A9D0B2E77"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of fD1ST is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    <Icon Id="Fd1sIcon" SourceFile="!(bindpath.Icon)icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="Fd1sIcon" />
+
+    <Property Id="WIXUI_INSTALLDIR" Value="VST3DIR" />
+    <ui:WixUI Id="WixUI_InstallDir" />
+
+    <StandardDirectory Id="CommonFiles6432Folder">
+      <Directory Id="VST3DIR" Name="VST3">
+        <Directory Id="Vst3Bundle" Name="fD1ST.vst3" />
+      </Directory>
+    </StandardDirectory>
+
+    <ComponentGroup Id="Vst3Files" Directory="Vst3Bundle">
+      <Files Include="!(bindpath.Vst3)**" />
+    </ComponentGroup>
+
+    <Feature Id="Vst3Feature" Title="VST3" Level="1" ConfigurableDirectory="VST3DIR"
+             Description="VST3 plugin. Default folder is Common Files\VST3.">
+      <ComponentGroupRef Id="Vst3Files" />
+    </Feature>
+  </Package>
+</Wix>
