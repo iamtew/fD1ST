@@ -1,5 +1,7 @@
 #pragma once
 
+#include "dsp/Comp.h"
+#include "dsp/FirXover.h"
 #include "dsp/LensProcessor.h"
 #include "dsp/Motion.h"
 #include "parameters/ParameterLayout.h"
@@ -19,7 +21,6 @@ public:
     void releaseResources() override {}
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
 
@@ -41,25 +42,48 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
     fd1st::Motion motion;
-    std::atomic<float> inPeak { 0 }, outPeak { 0 };
+    std::atomic<float> inPeak { 0 }, outPeak { 0 }, lastGr { 1 };
     std::atomic<int> focusLens { 0 };
     std::array<std::atomic<float>, 8> nodeRms {};
+    std::array<std::atomic<int>, 6> lensApplyCount {};
+    static constexpr int kProbeN = 2048;
+    std::array<float, kProbeN> probeIn {}, probeOut {};
+    std::atomic<int> probeW { 0 };
+    std::atomic<int> cavIndex { 0 };
+    std::atomic<float> scPeak { 0 };
+    bool detectListen = false;
+    std::atomic<bool> midiLearnOn { false };
+    juce::String midiLearnId;
     int runSelfTest();
 
-private:
     float loadf (const char* id, float fallback = 0.f) const;
     int osId() const;
+    int osFactor() const;
+    bool linphaseOn() const;
+
+private:
     int osLatency() const;
+    juce::dsp::Oversampling<float>* currentOs();
     void processWet (juce::dsp::AudioBlock<float> block);
     void processFrame (float& L, float& R);
     void configureLenses();
-    void applyMotion (float dt);
-    std::atomic<float> mixMod { 0 };
+    void applyMotion (float dt, float mainL, float mainR, float scL, float scR);
     void maybeSelfTest();
+    void updateOsRate();
+    void updatePrism();
+    float cavityTimeSec() const;
+    double hostBpm() const;
+    void prismSplit (int split, float inL, float inR, float osSr, float& loL, float& loR, float& hiL, float& hiR);
 
+    std::atomic<float> mixMod { 0 };
     std::array<fd1st::LensProcessor, 6> lenses;
-    juce::dsp::Oversampling<float> os2 { 2, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false, false };
-    juce::dsp::Oversampling<float> os8 { 2, 3, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, false, false };
+    using Os = juce::dsp::Oversampling<float>;
+    Os os2i { 2, 1, Os::filterHalfBandPolyphaseIIR, false, false };
+    Os os8i { 2, 3, Os::filterHalfBandPolyphaseIIR, false, false };
+    Os os32i { 2, 5, Os::filterHalfBandPolyphaseIIR, false, false };
+    Os os2f { 2, 1, Os::filterHalfBandFIREquiripple, false, false };
+    Os os8f { 2, 3, Os::filterHalfBandFIREquiripple, false, false };
+    Os os32f { 2, 5, Os::filterHalfBandFIREquiripple, false, false };
 
     juce::AudioBuffer<float> dryBuf;
     std::array<std::vector<float>, 2> dryDelay {};
@@ -68,16 +92,26 @@ private:
     int cavCap = 64, cavW = 0;
     int osLatencySamples = 0;
     int lastOs = -1;
+    int lastLin = -1;
     int program = 0;
     double hostSr = 48000.0;
     int hostBlock = 512;
-    float prismLp[5][2] {};
-    float cavZ[2] {};
+    float prismLp[5][2] {}, prismLp2[5][2] {};
+    float toneZ[2] {}, tonePostZ[2] {};
+    float cavHp[2] {};
     float causticZ = 0;
-    float spreadZ[2] {};
     bool selfTestRan = false;
 
-    juce::SmoothedValue<float> mixSmooth, outSmooth, globDriveSmooth, blendSmooth, heatSmooth, spreadSmooth, fbAmtSmooth, compSmooth;
+    juce::dsp::LinkwitzRileyFilter<float> lrLo[5], lrHi[5], lrLo2[5], lrHi2[5];
+    fd1st::FirSplit fir[5];
+    fd1st::Comp cavCompL, cavCompR, outCompL, outCompR;
+    float lastXoverHz[5] {};
+    int lastXoverSlope[5] {};
+
+    juce::SmoothedValue<float> mixSmooth, outSmooth, globDriveSmooth, blendSmooth, heatSmooth, spreadSmooth, fbAmtSmooth, compSmooth, toneSmooth;
+
+    float scL = 0, scR = 0;
+    juce::MidiBuffer midiNow;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (fD1STAudioProcessor)
 };

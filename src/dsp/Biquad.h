@@ -19,6 +19,20 @@ struct Biquad
         return y;
     }
 
+    void notch (float sr, float hz, float q)
+    {
+        const float w = 2.f * 3.14159265f * hz / sr;
+        const float c = std::cos (w);
+        const float s = std::sin (w);
+        const float alpha = s / (2.f * q);
+        const float a0 = 1.f + alpha;
+        b0 = 1.f / a0;
+        b1 = -2.f * c / a0;
+        b2 = 1.f / a0;
+        a1 = -2.f * c / a0;
+        a2 = (1.f - alpha) / a0;
+    }
+
     void peak (float sr, float hz, float q, float gainLin)
     {
         const float w = 2.f * 3.14159265f * hz / sr;

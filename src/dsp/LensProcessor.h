@@ -13,13 +13,19 @@ namespace fd1st
 class LensProcessor
 {
 public:
+    int applyCount = 0;
+
     void prepare (double sr, int)
     {
         sampleRate = sr > 1.0 ? sr : 48000.0;
-        makeupGain (0, 0.f, (float) sampleRate); // fill shared table once
+        makeupGain (0, 0.f, (float) sampleRate);
         ringCap = juce::jmax (64, (int) (sampleRate / 20.0) + 8);
         ring.assign ((size_t) ringCap, 0.f);
-        filt.prepare ({ sampleRate, (juce::uint32) 64, 1 });
+        comb.assign ((size_t) ringCap, 0.f);
+        juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) 64, 1 };
+        filt.prepare (spec);
+        filtBp.prepare (spec);
+        filtHp.prepare (spec);
         reset();
     }
 
@@ -44,14 +50,21 @@ public:
         env = 0;
         st = {};
         std::fill (ring.begin(), ring.end(), 0.f);
-        ringW = 0;
+        std::fill (comb.begin(), comb.end(), 0.f);
+        ringW = combW = 0;
         ringLp = 0;
+        hold = 0;
+        holdLeft = 0;
         filt.reset();
+        filtBp.reset();
+        filtHp.reset();
+        peakBq.reset();
         bass.reset();
         mid.reset();
         treble.reset();
         pres.reset();
         g = 1.f;
+        dp = 0.f;
         b = 0.f;
         m = 1.f;
         mx = 1.f;
@@ -62,27 +75,53 @@ public:
         on = true;
         mute = false;
         skipped = false;
+        applyCount = 0;
     }
 
     bool wasSkipped() const { return skipped; }
 
-    void configure (bool lensOn, bool lensMute, int styleId, float, float heat,
-                    float filtHz, float filtQ, int fType, int fPos,
+    void configure (bool lensOn, bool lensMute, int styleId,
+                    float hzIn, float qIn, int fType, int fPos,
                     float bassDb, float midDb, float trebleDb, float presDb, bool safe)
     {
         on = lensOn;
         mute = lensMute;
         style = juce::jlimit (0, 33, styleId);
-        heatDb = heat * 12.f;
         filtType = fType;
         filtPos = fPos;
         fbSafe = safe;
+        filtHz = juce::jlimit (20.f, 20000.f, hzIn);
+        filtQ = juce::jlimit (0.3f, 8.f, qIn);
+        using T = juce::dsp::StateVariableTPTFilterType;
         if (filtType >= 1 && filtType <= 3)
         {
-            using T = juce::dsp::StateVariableTPTFilterType;
-            filt.setCutoffFrequency (juce::jlimit (20.f, 20000.f, filtHz));
-            filt.setResonance (juce::jlimit (0.3f, 8.f, filtQ));
-            filt.setType (filtType == 2 ? T::bandpass : (filtType == 3 ? T::highpass : T::lowpass));
+            filt.setCutoffFrequency (filtHz);
+            filt.setResonance (filtQ);
+            if (filtType == 1)
+                filt.setType (T::lowpass);
+            else if (filtType == 2)
+                filt.setType (T::bandpass);
+            else
+                filt.setType (T::highpass);
+        }
+        else if (filtType == 4)
+            peakBq.notch ((float) sampleRate, filtHz, filtQ);
+        else if (filtType == 5)
+        {
+            const float t = (filtQ - 0.3f) / 7.7f;
+            peakBq.peak ((float) sampleRate, filtHz, 0.707f, dbToLin ((t * 2.f - 1.f) * 12.f));
+        }
+        else if (filtType == 6)
+        {
+            filt.setCutoffFrequency (this->filtHz);
+            filtBp.setCutoffFrequency (this->filtHz);
+            filtHp.setCutoffFrequency (this->filtHz);
+            filt.setResonance (0.707f);
+            filtBp.setResonance (0.707f);
+            filtHp.setResonance (0.707f);
+            filt.setType (T::lowpass);
+            filtBp.setType (T::bandpass);
+            filtHp.setType (T::highpass);
         }
         const float sr = (float) sampleRate;
         bass.lowShelf (sr, 120.f, dbToLin (bassDb));
@@ -91,15 +130,17 @@ public:
         pres.peak (sr, 8000.f, 1.2f, dbToLin (presDb));
     }
 
-    void tick (float driveDb, float bias, float mix, float levelDb, float pan,
+    void tick (float driveDb, float heat, float drivePan, float bias, float mix, float levelDb, float pan,
                float ringAmt, float ringHz, float dynAmt)
     {
         skipped = ! on && ! mute;
+        heatDb = heat * 12.f;
         driveSmooth.setTargetValue (juce::jlimit (0.f, 36.f, driveDb + heatDb));
         biasSmooth.setTargetValue (juce::jlimit (-1.f, 1.f, bias));
         mixSmooth.setTargetValue (juce::jlimit (0.f, 1.f, mix));
         const float d = driveSmooth.getNextValue();
         g = dbToLin (d);
+        dp = juce::jlimit (-1.f, 1.f, drivePan);
         b = biasSmooth.getNextValue();
         mx = mixSmooth.getNextValue();
         makeupSmooth.setTargetValue (makeupGain (style, d, (float) sampleRate));
@@ -117,6 +158,7 @@ public:
 
     float apply (float x, int channel)
     {
+        ++applyCount;
         if (mute)
             return 0.f;
         if (! on)
@@ -126,16 +168,17 @@ public:
         x = x + readRing() * fbAmt;
         if (dyn != 0.f)
             x *= dynGain (x);
-        if (filtType >= 1 && filtType <= 3 && filtPos == 0)
-            x = filt.processSample (0, x);
+        if (filtPos == 0)
+            x = filterSample (x);
 
-        float y = shapeStyle (style, x * g + b * 0.25f, drive01, (float) sampleRate, st);
+        const float gp = g * (channel == 0 ? (1.f - dp) : (1.f + dp));
+        float y = shapeStyle (style, x * gp + b * 0.25f, drive01, (float) sampleRate, st);
         y = juce::jlimit (-8.f, 8.f, y) * m;
         if (! std::isfinite (y))
             y = 0.f;
 
-        if (filtType >= 1 && filtType <= 3 && filtPos == 1)
-            y = filt.processSample (0, y);
+        if (filtPos != 0)
+            y = filterSample (y);
 
         y = pres.process (treble.process (mid.process (bass.process (y))));
         y = dry + (y - dry) * mx;
@@ -158,14 +201,58 @@ private:
     double sampleRate = 48000.0;
     juce::SmoothedValue<float> driveSmooth, biasSmooth, mixSmooth, makeupSmooth, levelSmooth;
     StyleState st;
-    std::vector<float> ring;
-    int ringCap = 64, ringW = 0;
+    std::vector<float> ring, comb;
+    int ringCap = 64, ringW = 0, combW = 0;
     float ringLp = 0, fbAmt = 0, fbHz = 220.f, heatDb = 0, dyn = 0, env = 0, drive01 = 0;
-    float g = 1.f, b = 0.f, m = 1.f, mx = 1.f, lvl = 1.f, panL = 1.f, panR = 1.f;
+    float g = 1.f, dp = 0.f, b = 0.f, m = 1.f, mx = 1.f, lvl = 1.f, panL = 1.f, panR = 1.f;
+    float filtHz = 1200.f, filtQ = 0.707f, hold = 0;
+    int holdLeft = 0;
     int style = 0, filtType = 0, filtPos = 1;
     bool on = true, mute = false, fbSafe = true, skipped = false;
-    juce::dsp::StateVariableTPTFilter<float> filt;
-    Biquad bass, mid, treble, pres;
+    juce::dsp::StateVariableTPTFilter<float> filt, filtBp, filtHp;
+    Biquad peakBq, bass, mid, treble, pres;
+
+    float filterSample (float x)
+    {
+        if (filtType <= 0)
+            return x;
+        if (filtType >= 1 && filtType <= 3)
+            return filt.processSample (0, x);
+        if (filtType == 4 || filtType == 5)
+            return peakBq.process (x);
+        if (filtType == 6)
+        {
+            const float n = juce::jlimit (0.f, 1.f, (filtQ - 0.3f) / 7.7f);
+            const float lp = filt.processSample (0, x);
+            const float bp = filtBp.processSample (0, x);
+            const float hp = filtHp.processSample (0, x);
+            if (n < 0.5f)
+            {
+                const float t = n * 2.f;
+                return lp + (bp - lp) * t;
+            }
+            const float t = (n - 0.5f) * 2.f;
+            return bp + (hp - bp) * t;
+        }
+        if (filtType == 7)
+        {
+            const int del = juce::jlimit (1, ringCap - 1, (int) (sampleRate / (double) filtHz));
+            const float delayed = comb[(size_t) ((combW - del + ringCap) % ringCap)];
+            const float mix = juce::jlimit (0.f, 1.f, (filtQ - 0.3f) / 7.7f);
+            comb[(size_t) combW] = x;
+            combW = (combW + 1) % ringCap;
+            return x + delayed * mix;
+        }
+        // Resample: S&H at filt_hz
+        const int period = juce::jmax (1, (int) (sampleRate / (double) filtHz));
+        if (holdLeft <= 0)
+        {
+            hold = x;
+            holdLeft = period;
+        }
+        --holdLeft;
+        return hold;
+    }
 
     float readRing() const
     {
