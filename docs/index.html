@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>&fnof;D1ST — DIST distortion FX</title>
+  <meta name="description" content="&fnof;D1ST is DIST, a stereo distortion and saturation effect. Watch the signal break. VST3. Work in progress.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Stupid Audio">
+  <meta property="og:title" content="&fnof;D1ST — DIST distortion FX">
+  <meta property="og:description" content="&fnof;D1ST is DIST, a stereo distortion and saturation effect. Watch the signal break. VST3. Work in progress.">
+  <meta property="og:url" content="https://iamtew.github.io/fD1ST/">
+  <meta property="og:image" content="https://iamtew.github.io/fD1ST/ogimage-fD1ST.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://iamtew.github.io/fD1ST/ogimage-fD1ST.png">
+  <link rel="icon" href="logo.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <header>
+    <a class="brand" href="#top"><img src="logo.png" alt="" width="36" height="36">&fnof;D1ST</a>
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Menu">
+      <svg class="icon" aria-hidden="true"><use href="icons.svg#menu"></use></svg>
+    </button>
+    <nav id="site-nav">
+      <a href="#listen">Listen</a>
+      <a href="#path">Path</a>
+      <a href="docs.html">Manual</a>
+      <a href="https://audio.stupid.systems/">Stupid Audio</a>
+    </nav>
+  </header>
+
+  <main id="top" class="landing">
+    <div class="hero-panel">
+      <div class="lead">
+        <img class="hero" src="logo.png" alt="&fnof;D1ST" width="160" height="160">
+        <div>
+          <h1>&fnof;D1ST</h1>
+          <p class="tag">Watch the signal break.</p>
+        </div>
+      </div>
+      <p>&fnof;D1ST is DIST, a stereo distortion and saturation effect. Spoken name DIST. The leading f is fx. Never “fist.”</p>
+      <p>Work in progress. The editor is burgundy, the host parameters are in, the Path and Glow still to come. It is part of <a href="https://audio.stupid.systems/">Stupid Audio</a>, not listed on the catalog yet.</p>
+      <p class="actions">
+        <button type="button" class="download" data-dl-open>
+          <svg class="icon" aria-hidden="true"><use href="icons.svg#download"></use></svg>
+          Download
+        </button>
+        <a class="repo" href="https://github.com/iamtew/fD1ST">
+          <svg class="icon" aria-hidden="true"><use href="icons.svg#github"></use></svg>
+          GitHub
+        </a>
+      </p>
+      <p class="meta">VST3. Work in progress. No release zip until a tag ships.</p>
+    </div>
+
+    <section id="listen" class="feature">
+      <div>
+        <h2>Listen</h2>
+        <p>Wet, Dry, Delta, and Caustic. Delta is the grit you added. Caustic is that grit with the body stripped. The skeleton already exposes the listen parameter; the DSP that makes Delta mean something is a later step.</p>
+      </div>
+      <img class="shot" src="Screenshot1.png" alt="The &fnof;D1ST editor">
+    </section>
+
+    <section id="path" class="feature">
+      <div>
+        <h2>Path</h2>
+        <p>Six lenses, six routes: One, Stack, Split, Prism, Axis, Cavity. Click a node to Focus it. Motion wires onto the path. That graph is the product. This checkout is still stereo thru so the box compiles.</p>
+      </div>
+      <img class="shot" src="Screenshot2.png" alt="&fnof;D1ST placeholder">
+    </section>
+  </main>
+
+  <dialog id="dl" class="dl-dialog" aria-labelledby="dl-title">
+    <button type="button" class="dl-close" data-dl-close aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="icons.svg#close"></use></svg>
+    </button>
+    <h2 id="dl-title">Download &fnof;D1ST</h2>
+    <div class="dl-kind">
+      <p>No tagged build yet. When a numeric tag ships, the Windows installer lands here.</p>
+      <div class="dl-row" data-kind="installer" hidden>
+        <a class="download os" data-os="win" hidden>
+          <svg class="icon" aria-hidden="true"><use href="icons.svg#windows"></use></svg>
+          Windows installer
+        </a>
+      </div>
+    </div>
+    <div class="dl-kind">
+      <p>The VST3 zip is just the plugin. Drop it where your DAW looks for VST3s. Mac builds are ad-hoc signed, so Gatekeeper will sulk until you right-click Open the first time.</p>
+      <div class="dl-row" data-kind="vst3" hidden>
+        <a class="download os" data-os="win" hidden>
+          <svg class="icon" aria-hidden="true"><use href="icons.svg#windows"></use></svg>
+          Windows
+        </a>
+        <a class="download os" data-os="linux" hidden>
+          <svg class="icon tux" aria-hidden="true"><use href="icons.svg#linux"></use></svg>
+          Linux
+        </a>
+        <a class="download os" data-os="mac" hidden>
+          <svg class="icon" aria-hidden="true"><use href="icons.svg#apple"></use></svg>
+          macOS
+        </a>
+      </div>
+    </div>
+    <img class="dl-logo" src="logo.png" alt="" width="192" height="192">
+  </dialog>
+
+  <script src="icons.js"></script>
+  <script type="module" src="fx.js"></script>
+  <script src="site.js"></script>
+</body>
+</html>
