@@ -938,4 +938,4 @@ Each step is a **compiling VST3**. Do not skip ahead to 32× FIR.
 8. Motion ValueTree + one Orbit + Wiring.
 9. Remaining sources, factory JSON, `--self-test`.
 
-**v1 ship = through step 9.** Until step 5 is green: Superb may alias Good; linphase stays off (enum present, UI disabled).
+**v1 ship = through step 9.** Step 5 is green: Superb is 32×; linphase selects FIR OS and FIR Prism splits.

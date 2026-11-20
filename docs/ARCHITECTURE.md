@@ -1,17 +1,17 @@
 # Architecture
 
-PluginProcessor owns the APVTS. Step 1 has no Path DSP: `processBlock` is stereo thru with denormal flush, bypass, mix (noop while wet equals dry), and output gain.
+PluginProcessor owns the APVTS (globals + six lenses + five crossovers). Motion and Wiring live on a `MOTION` ValueTree, not host params.
 
-The editor is a burgundy chassis with Mix, Output, Lens 0 Drive, and Bypass. Path graph and OpenGL come later; `juce_opengl` is already in the jucer.
+Audio thread: denormal flush, optional OS (Off/Fast/Good/Superb, IIR or FIR), Drive, Tone, Path, Cavity, Comp, clip, then host-rate Listen and Mix against a latency-matched dry tap.
 
-Message thread:
-
-- The editor scales a fixed base size the same way sibling plugins do.
-- Host automatable surface is globals + six lenses + five crossovers. Motion and Wiring stay out of APVTS.
+The editor is Forest Depth burgundy: Path, Focus (transfer, bloom, spectrum, cavity), Heat/Spread/Motion macros, per-lens workbench, Wiring well. OpenGL is attached for the 2D viz; the CPU path still paints if the context is gone.
 
 ## Files
 
 - `src/dsp/Names.h` — choice labels and counts. JUCE-free for `just check`.
+- `src/dsp/LensProcessor.h` — one lens: style, filter, ring, dyn, EQ.
+- `src/dsp/Motion.h` — sources and 50 wires.
 - `src/parameters/ParameterIDs.h` — APVTS string IDs. Do not rename.
 - `src/parameters/ParameterLayout.h` — the host surface.
+- `src/presets/Factory.h` — 48 spec programs, 12 stamps, `.fd1st` JSON.
 - `src/ui/Theme.h` — Forest Depth, six hexes.

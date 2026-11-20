@@ -19,16 +19,16 @@ Each numbered step is a **compiling VST3**. Do not skip ahead to 32× FIR. v1 sh
 
 ## Open ceilings (do not forget)
 
-Build-order steps 1–9 compiled, but these spec gaps remain. Close them before calling DIST done.
+Closed in the plugin. Left here so a later Clanker does not reopen them as work.
 
-- [ ] Superb still equals Good — real 32× FIR OS
-- [ ] Linphase stays off — enum present, UI disabled / treated as off
-- [ ] Prism splits are complementary one-pole, not Linkwitz-Riley 24 dB
-- [ ] Filter types 4–8 (Notch, Peak, Morph, Comb, Resample) are dry
-- [ ] Bloom / FFT / Cavity phosphor are not drawn
-- [ ] Motion extras are empty ValueTree nodes (Strike, Follow, MIDI, XY, Noise; Orbits 1–3; Wiring 1–49)
-- [ ] Factory is host programs, not 48 `.fd1st` JSON files
-- [ ] `--self-test` covers silence, bypass, and Glow makeup — not the full spec §11 list
+- [x] Superb still equals Good — real 32× FIR OS
+- [x] Linphase stays off — enum present, UI disabled / treated as off
+- [x] Prism splits are complementary one-pole, not Linkwitz-Riley 24 dB
+- [x] Filter types 4–8 (Notch, Peak, Morph, Comb, Resample) are dry
+- [x] Bloom / FFT / Cavity phosphor are not drawn
+- [x] Motion extras are empty ValueTree nodes (Strike, Follow, MIDI, XY, Noise; Orbits 1–3; Wiring 1–49)
+- [x] Factory is host programs, not 48 `.fd1st` JSON files
+- [x] `--self-test` covers silence, bypass, and Glow makeup — not the full spec §11 list
 
 ## Meat Bag
 

@@ -36,6 +36,8 @@ icon: docs-logo
     Get-ChildItem Builds\VisualStudio2022 -Recurse -Filter resources.res | Remove-Item -Force
 
 # Debug and Release both build the solution (VST3 + standalone). Dist only ships the VST3.
+alias build := build-debug
+
 build-debug: resave
     & '{{MSBUILD}}' {{SOLUTION}} /p:Configuration=Debug /p:Platform=x64 /m
 

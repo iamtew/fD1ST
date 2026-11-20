@@ -2,7 +2,7 @@
 
 fD1ST is DIST, a stereo distortion and saturation effect. Spoken name DIST. The leading f is fx. Never “fist.”
 
-Work in progress. Path, Focus transfer lens, 34 styles, Heat/Spread/Listen, one Orbit. Superb still equals Good. The spec in the sidebar is the map.
+Path, Focus, Motion. 34 styles, six routes, Superb 32×, linear phase, 48 factory programs. Catalog still off until the Meat Bag asks.
 
 Bypass copies input to output. Keys: W wet, Shift+D dry, E delta, C caustic.
 
