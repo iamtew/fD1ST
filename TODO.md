@@ -7,11 +7,11 @@ Each numbered step is a **compiling VST3**. Do not skip ahead to 32× FIR. v1 sh
 ## Done
 
 - [x] Step 1 — Just + `.jucer`, burgundy editor, stereo thru, full host APVTS, GitHub, Pages (`docs/`)
+- [x] Step 2 — One route, Glow + makeup, Drive, mix, OS Off/Good
 - [x] Catalog — stay off audio.stupid.systems until asked
 
 ## Build order
 
-- [ ] Step 2 — One route, Glow + makeup, Drive, mix, OS Off/Good
 - [ ] Step 3 — Transfer lens viz (CPU) + meters
 - [ ] Step 4 — Styles 1–33
 - [ ] Step 5 — Stack / Split / Prism / Axis / Cavity + Ring
@@ -22,7 +22,7 @@ Each numbered step is a **compiling VST3**. Do not skip ahead to 32× FIR. v1 sh
 
 ## Meat Bag
 
-- [ ] Replace `assets/logo.png` with the Affinity export, then `just icon` / `just docs-logo`
+- [ ] Replace `assets/logo.png` (placeholder) with the Affinity export, then `just icon` / `just docs-logo`
 - [ ] `just docs-screenshots` once the editor is worth shooting
 - [ ] First numeric tag (`0.0.1`, matches the jucer) when a build is worth shipping
 - [ ] Catalog tile on Stupid Audio when ready to be public

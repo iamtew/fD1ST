@@ -4,7 +4,7 @@
 
 **fD1ST** is DIST, a stereo distortion / saturation effect. Spoken name DIST. The leading *f* is fx. Never “fist.” Tagline: **Watch the signal break.**
 
-Work in progress. Stereo thru, burgundy editor, full host parameter surface. Glow, Path, and the rest of the spec land in later steps.
+Work in progress. One-route Glow with makeup, Drive, mix, and OS Off/Fast/Good. Path, styles, and the rest of the spec land in later steps. The logo in `assets/logo.png` is a placeholder.
 
 VST3. Stupid Audio. [MIT](LICENSE). Site: [docs/](docs/index.html). Manual: [docs/docs.html](docs/docs.html).
 

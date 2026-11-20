@@ -20,6 +20,10 @@
             file="src/PluginEditor.cpp"/>
       <GROUP id="dspGrp01" name="dsp">
         <FILE id="nmsH001" name="Names.h" compile="0" resource="0" file="src/dsp/Names.h"/>
+        <FILE id="shpH001" name="Shaper.h" compile="0" resource="0" file="src/dsp/Shaper.h"/>
+        <FILE id="clpH001" name="Clip.h" compile="0" resource="0" file="src/dsp/Clip.h"/>
+        <FILE id="lnsH001" name="LensProcessor.h" compile="0" resource="0"
+              file="src/dsp/LensProcessor.h"/>
       </GROUP>
       <GROUP id="prmGrp01" name="parameters">
         <FILE id="pidH001" name="ParameterIDs.h" compile="0" resource="0" file="src/parameters/ParameterIDs.h"/>

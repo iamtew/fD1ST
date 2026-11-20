@@ -2,8 +2,8 @@
 
 namespace
 {
-constexpr int kEditorW = 520;
-constexpr int kEditorH = 280;
+constexpr int kEditorW = 720;
+constexpr int kEditorH = 300;
 constexpr int kPad = 10;
 constexpr int kTitleH = 40;
 }
@@ -96,7 +96,20 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
 
     bindKnob (mix, ParamID::glob_mix, "Mix");
     bindKnob (out, ParamID::glob_out_db, "Output");
-    bindKnob (drive, ParamID::cDriveDb[0], "Lens 0 Drive");
+    bindKnob (globDrive, ParamID::glob_drive_db, "Drive");
+    bindKnob (drive, ParamID::cDriveDb[0], "Lens Drive");
+
+    osLabel.setText ("OS", juce::dontSendNotification);
+    osLabel.setJustificationType (juce::Justification::centred);
+    osLabel.setColour (juce::Label::textColourId, kSage);
+    osBox.setColour (juce::ComboBox::backgroundColourId, kWell);
+    osBox.setColour (juce::ComboBox::textColourId, kWhite);
+    osBox.setColour (juce::ComboBox::outlineColourId, kForest);
+    osBox.setColour (juce::ComboBox::arrowColourId, kEmerald);
+    osAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (
+        proc.apvts, ParamID::glob_os, osBox);
+    content.addAndMakeVisible (osBox);
+    content.addAndMakeVisible (osLabel);
 
     bypass.setButtonText ("Bypass");
     bypassAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (
@@ -155,14 +168,18 @@ void fD1STAudioProcessorEditor::layoutContent()
     r.removeFromTop (kTitleH + 8);
     auto bar = r.removeFromTop (28);
     bypass.setBounds (bar.removeFromRight (88));
+    auto osArea = bar.removeFromRight (120);
+    osLabel.setBounds (osArea.removeFromLeft (28));
+    osBox.setBounds (osArea);
     r.removeFromTop (8);
-    const int col = r.getWidth() / 3;
+    const int col = r.getWidth() / 4;
     auto place = [&] (Knob& k, juce::Rectangle<int> cell)
     {
         k.l.setBounds (cell.removeFromTop (16));
         k.s.setBounds (cell);
     };
-    place (mix, r.removeFromLeft (col).reduced (8, 0));
-    place (out, r.removeFromLeft (col).reduced (8, 0));
-    place (drive, r.reduced (8, 0));
+    place (mix, r.removeFromLeft (col).reduced (6, 0));
+    place (out, r.removeFromLeft (col).reduced (6, 0));
+    place (globDrive, r.removeFromLeft (col).reduced (6, 0));
+    place (drive, r.reduced (6, 0));
 }

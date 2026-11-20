@@ -46,7 +46,10 @@ private:
     int baseW = 0, baseH = 0;
 
     juce::Image logo;
-    Knob mix, out, drive;
+    Knob mix, out, drive, globDrive;
+    juce::ComboBox osBox;
+    juce::Label osLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> osAtt;
     juce::ToggleButton bypass;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAtt;
     juce::TooltipWindow tip { this, 400 };
