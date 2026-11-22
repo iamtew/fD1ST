@@ -8,7 +8,11 @@
 class FocusView : public juce::Component, private juce::Timer
 {
 public:
-    explicit FocusView (fD1STAudioProcessor& p) : proc (p) { startTimerHz (60); }
+    explicit FocusView (fD1STAudioProcessor& p, bool contextStrip = false)
+        : proc (p), strip (contextStrip)
+    {
+        startTimerHz (60);
+    }
 
     void paint (juce::Graphics& g) override
     {
@@ -16,10 +20,22 @@ public:
         auto r = getLocalBounds().toFloat();
         g.setColour (kWell);
         g.fillRoundedRectangle (r, 6.f);
-        auto plot = r.removeFromLeft (r.getWidth() * 0.55f).reduced (8.f);
-        auto bloomR = r.removeFromTop (r.getHeight() * 0.45f).reduced (6.f);
-        auto specR = r.removeFromTop (r.getHeight() * 0.55f).reduced (6.f);
-        auto cavR = r.reduced (6.f);
+        if (strip)
+        {
+            const float amt = proc.apvts.getRawParameterValue (ParamID::glob_fb_amt)->load();
+            const int route = (int) proc.apvts.getRawParameterValue (ParamID::glob_route)->load();
+            const float sp = proc.apvts.getRawParameterValue (ParamID::glob_spread)->load();
+            const bool side = amt > 0.01f || route == 5 || route == 4 || std::abs (sp) > 0.05f;
+            auto cavR = side ? r.removeFromRight (juce::jmin (160.f, r.getWidth() * 0.28f)).reduced (6.f)
+                             : juce::Rectangle<float> {};
+            drawSpectrum (g, r.reduced (6.f));
+            if (side)
+                drawCavity (g, cavR);
+            return;
+        }
+
+        auto plot = r.removeFromLeft (r.getWidth() * 0.58f).reduced (8.f);
+        auto bloomR = r.reduced (6.f);
 
         g.setColour (kBlack);
         g.fillRect (plot);
@@ -81,8 +97,6 @@ public:
         }
 
         drawBloom (g, bloomR);
-        drawSpectrum (g, specR);
-        drawCavity (g, cavR);
 
         const float inM = proc.inPeak.load();
         const float outM = proc.outPeak.load();
@@ -97,6 +111,7 @@ public:
 
 private:
     fD1STAudioProcessor& proc;
+    bool strip = false;
 
     void copyProbe (float* dest, int n, bool wet)
     {
