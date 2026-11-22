@@ -12,7 +12,7 @@ Build order in the spec. This tree is past **step 9**: DSP path, Focus viz, Moti
 - APVTS for all host parameters (globals + six lenses + xovers). Motion/Wiring stay ValueTree later.
 - Just + justfile
 - JUCE from `%USERPROFILE%\JUCE`
-- `assets/logo.png` is the Affinity export. Source of truth. Never overwrite once the Meat Bag drops the real mark. `just icon` / `just docs-logo` derive the rest.
+- Clanker never modifies `assets/logo.png` or `assets/logo.af`. Meat Bag owns the Affinity export; that PNG is source of truth. Only derived files: `just docs-logo` → `docs/logo.png`, `just icon` → `Builds/VisualStudio2022/icon.ico`.
 
 ## Layout
 src/
