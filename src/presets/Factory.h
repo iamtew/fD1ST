@@ -105,6 +105,22 @@ inline const char* factoryName (int i)
 
 inline constexpr int kFactoryCount = 48;
 
+// Spec §9 headings. [begin, end) are factory indices.
+struct FactoryCat { const char* name; int begin; int end; };
+inline constexpr FactoryCat kFactoryCats[] = {
+    { "Init / sight", 0, 4 },
+    { "Bus / print", 4, 9 },
+    { "Drums", 9, 14 },
+    { "Bass", 14, 18 },
+    { "Voice / strings / guitar", 18, 23 },
+    { "Prism color", 23, 28 },
+    { "Axis", 28, 31 },
+    { "Cavity", 31, 36 },
+    { "Motion", 36, 42 },
+    { "Wreck", 42, 48 },
+};
+inline constexpr int kFactoryCatCount = (int) (sizeof (kFactoryCats) / sizeof (kFactoryCats[0]));
+
 inline const char* stampName (int i)
 {
     static const char* n[] = {

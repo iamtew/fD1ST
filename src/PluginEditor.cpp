@@ -242,6 +242,11 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     panelLnF.setColour (juce::TooltipWindow::backgroundColourId, kWell);
     panelLnF.setColour (juce::TooltipWindow::textColourId, kSage);
     panelLnF.setColour (juce::TooltipWindow::outlineColourId, kEmerald);
+    panelLnF.setColour (juce::PopupMenu::backgroundColourId, kWell);
+    panelLnF.setColour (juce::PopupMenu::textColourId, kSage);
+    panelLnF.setColour (juce::PopupMenu::headerTextColourId, kEmerald);
+    panelLnF.setColour (juce::PopupMenu::highlightedBackgroundColourId, kEmerald);
+    panelLnF.setColour (juce::PopupMenu::highlightedTextColourId, kWhite);
 
     logo = punchEdgeBlack (juce::ImageCache::getFromMemory (BinaryData::logo_png, BinaryData::logo_pngSize));
     logo = cropOpaque (logo);
@@ -293,8 +298,13 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     colourCombo (filtBox);
     colourCombo (stampBox);
     colourCombo (srcBox);
-    for (int i = 0; i < fd1st::kFactoryCount; ++i)
-        programBox.addItem (fd1st::factoryName (i), i + 1);
+    for (int c = 0; c < fd1st::kFactoryCatCount; ++c)
+    {
+        const auto& cat = fd1st::kFactoryCats[c];
+        programBox.addSectionHeading (cat.name);
+        for (int i = cat.begin; i < cat.end; ++i)
+            programBox.addItem (fd1st::factoryName (i), i + 1);
+    }
     programBox.setSelectedItemIndex (proc.getCurrentProgram(), juce::dontSendNotification);
     programBox.setTooltip ("Preset");
     programBox.onChange = [this]
