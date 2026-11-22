@@ -255,7 +255,7 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
 
     bindKnob (mix, ParamID::glob_mix, "Mix");
     bindKnob (out, ParamID::glob_out_db, "Output");
-    bindKnob (globDrive, ParamID::glob_drive_db, "Drive");
+    bindKnob (globDrive, ParamID::glob_drive_db, "Gain");
     bindKnob (heat, ParamID::glob_heat, "Heat");
     bindKnob (spread, ParamID::glob_spread, "Spread");
     bindKnob (motionAmt, ParamID::glob_motion, "Motion");
@@ -674,7 +674,7 @@ void fD1STAudioProcessorEditor::layoutContent()
     work.removeFromLeft (8);
     auto stage = work;
 
-    if (focusStage == PathView::Drive)
+    if (focusStage == PathView::In || focusStage == PathView::Drive)
     {
         auto row = stage.removeFromTop (110);
         const int cw = row.getWidth() / 3;
@@ -752,8 +752,7 @@ void fD1STAudioProcessorEditor::layoutContent()
     else
     {
         stageHint.setVisible (true);
-        stageHint.setText (focusStage == PathView::Clip ? "Hard clip at the rail." : "Input tap.",
-                           juce::dontSendNotification);
+        stageHint.setText ("Hard clip at the rail.", juce::dontSendNotification);
         stageHint.setBounds (stage);
     }
 
