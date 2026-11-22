@@ -6,7 +6,86 @@ namespace
 constexpr int kEditorW = 1100;
 constexpr int kEditorH = 720;
 constexpr int kPad = 10;
-constexpr int kTitleH = 36;
+constexpr int kTitleH = 64;
+constexpr int kLogoH = 56;
+
+// Outer field is opaque black. Flood from the edges so the D sits on burgundy.
+// Halftone dots inside the D stay — they are not edge-connected.
+juce::Image punchEdgeBlack (juce::Image src)
+{
+    if (! src.isValid())
+        return src;
+    src = src.createCopy();
+    if (src.getFormat() != juce::Image::ARGB)
+        src = src.convertedToFormat (juce::Image::ARGB);
+    juce::Image::BitmapData d (src, juce::Image::BitmapData::readWrite);
+    const int w = src.getWidth(), h = src.getHeight();
+    juce::HeapBlock<char> seen ((size_t) w * (size_t) h, true);
+    juce::Array<juce::Point<int>> q;
+    auto nearBlack = [&] (int x, int y)
+    {
+        auto c = d.getPixelColour (x, y);
+        return c.getAlpha() > 8 && (c.getRed() + c.getGreen() + c.getBlue()) < 24;
+    };
+    auto push = [&] (int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= w || y >= h)
+            return;
+        const int i = y * w + x;
+        if (seen[(size_t) i])
+            return;
+        if (! nearBlack (x, y))
+            return;
+        seen[(size_t) i] = 1;
+        q.add ({ x, y });
+    };
+    for (int x = 0; x < w; ++x)
+    {
+        push (x, 0);
+        push (x, h - 1);
+    }
+    for (int y = 0; y < h; ++y)
+    {
+        push (0, y);
+        push (w - 1, y);
+    }
+    for (int n = 0; n < q.size(); ++n)
+    {
+        const auto p = q.getUnchecked (n);
+        d.setPixelColour (p.x, p.y, juce::Colour());
+        push (p.x + 1, p.y);
+        push (p.x - 1, p.y);
+        push (p.x, p.y + 1);
+        push (p.x, p.y - 1);
+    }
+    return src;
+}
+
+juce::Image cropOpaque (juce::Image src)
+{
+    if (! src.isValid())
+        return src;
+    juce::Image::BitmapData d (src, juce::Image::BitmapData::readOnly);
+    const int w = src.getWidth(), h = src.getHeight();
+    int x0 = w, y0 = h, x1 = 0, y1 = 0;
+    for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x)
+            if (d.getPixelColour (x, y).getAlpha() > 8)
+            {
+                x0 = juce::jmin (x0, x);
+                y0 = juce::jmin (y0, y);
+                x1 = juce::jmax (x1, x);
+                y1 = juce::jmax (y1, y);
+            }
+    if (x1 <= x0)
+        return src;
+    return src.getClippedImage ({ x0, y0, x1 - x0 + 1, y1 - y0 + 1 }).createCopy();
+}
+
+juce::Rectangle<int> fitH (juce::Rectangle<int> cell, int h)
+{
+    return cell.withSizeKeepingCentre (cell.getWidth(), h);
+}
 }
 
 void fD1STAudioProcessorEditor::PanelLnF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
@@ -83,6 +162,46 @@ void fD1STAudioProcessorEditor::bindKnob (Knob& k, const char* id, const juce::S
     k.s.onDragStart = [this, id] { lastParam = id; pushUndo(); };
 }
 
+void fD1STAudioProcessorEditor::hideKnob (Knob& k)
+{
+    k.s.setVisible (false);
+    k.l.setVisible (false);
+    k.s.setBounds ({});
+    k.l.setBounds ({});
+}
+
+void fD1STAudioProcessorEditor::placeKnob (Knob& k, juce::Rectangle<int> cell)
+{
+    k.s.setVisible (true);
+    k.l.setVisible (true);
+    k.l.setBounds (cell.removeFromTop (14));
+    k.s.setBounds (cell);
+}
+
+void fD1STAudioProcessorEditor::hideStageControls()
+{
+    for (auto* k : { &mix, &out, &globDrive, &drive, &bias, &blend, &tone, &cavTime, &cavAmt, &cavNote, &comp,
+                     &lensMix, &lensDyn, &lensLevel, &lensPan, &lensFb, &lensFbHz, &filtHz, &filtQ, &bass, &mid,
+                     &treble, &presence, &xover1, &xover2, &xover3 })
+        hideKnob (*k);
+    for (auto* c : { &styleBox, &chmodeBox, &stampBox, &fbModeBox, &filtBox })
+    {
+        c->setVisible (false);
+        c->setBounds ({});
+    }
+    for (auto* b : { &colorcomp, &cavSafe, &lensOn, &lensMute, &lensSolo })
+    {
+        b->setVisible (false);
+        b->setBounds ({});
+    }
+    styleLabel.setVisible (false);
+    styleLabel.setBounds ({});
+    routeLabel.setVisible (false);
+    routeLabel.setBounds ({});
+    stageHint.setVisible (false);
+    stageHint.setBounds ({});
+}
+
 void fD1STAudioProcessorEditor::rebindLens()
 {
     const int i = juce::jlimit (0, 5, proc.focusLens.load());
@@ -124,7 +243,15 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     panelLnF.setColour (juce::TooltipWindow::textColourId, kSage);
     panelLnF.setColour (juce::TooltipWindow::outlineColourId, kEmerald);
 
-    logo = juce::ImageCache::getFromMemory (BinaryData::logo_png, BinaryData::logo_pngSize);
+    logo = punchEdgeBlack (juce::ImageCache::getFromMemory (BinaryData::logo_png, BinaryData::logo_pngSize));
+    logo = cropOpaque (logo);
+    if (logo.isValid() && logo.getHeight() > 0)
+    {
+        const int dh = kLogoH * 2;
+        const int dw = juce::jmax (1, dh * logo.getWidth() / logo.getHeight());
+        logo = logo.rescaled (dw, dh, juce::Graphics::highResamplingQuality);
+        logoDrawW = dw / 2;
+    }
 
     bindKnob (mix, ParamID::glob_mix, "Mix");
     bindKnob (out, ParamID::glob_out_db, "Output");
@@ -169,6 +296,7 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     for (int i = 0; i < fd1st::kFactoryCount; ++i)
         programBox.addItem (fd1st::factoryName (i), i + 1);
     programBox.setSelectedItemIndex (proc.getCurrentProgram(), juce::dontSendNotification);
+    programBox.setTooltip ("Preset");
     programBox.onChange = [this]
     {
         pushUndo();
@@ -197,9 +325,12 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
 
     osLabel.setText ("OS", juce::dontSendNotification);
     styleLabel.setText ("Style", juce::dontSendNotification);
-    routeLabel.setText ("Path", juce::dontSendNotification);
+    routeLabel.setText ("Route", juce::dontSendNotification);
     progLabel.setText ("Preset", juce::dontSendNotification);
     wireLabel.setText ("Wiring", juce::dontSendNotification);
+    stageHint.setJustificationType (juce::Justification::centred);
+    stageHint.setColour (juce::Label::textColourId, kSage);
+    content.addAndMakeVisible (stageHint);
     for (auto* l : { &osLabel, &styleLabel, &routeLabel, &wireLabel, &progLabel, &abMorph.l })
     {
         l->setJustificationType (juce::Justification::centred);
@@ -306,16 +437,28 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     for (auto* b : { &bypass, &linphase, &colorcomp, &cavSafe, &lensOn, &lensMute, &lensSolo, &midiLearn, &helpBtn })
         content.addAndMakeVisible (*b);
 
-    helpText.setText ("DIST: Path, Focus, Motion. W wet, Shift+D dry, E delta, C caustic. Drag wire src onto Mix.",
+    helpText.setText ("DIST: click Path to Focus a stage. W wet, Shift+D dry, E delta, C caustic.",
                       juce::dontSendNotification);
     helpText.setColour (juce::Label::textColourId, kSage);
     helpText.setVisible (false);
     content.addAndMakeVisible (helpText);
 
-    path.onFocus = [this] (int) { rebindLens(); };
+    path.onFocus = [this] (int s)
+    {
+        focusStage = s;
+        if (s >= 0)
+            rebindLens();
+        layoutContent();
+    };
     content.addAndMakeVisible (path);
     content.addAndMakeVisible (focus);
+    content.addAndMakeVisible (context);
     rebindLens();
+    routeBox.onChange = [this]
+    {
+        layoutContent();
+        path.repaint();
+    };
 
     addAndMakeVisible (content);
     gl.attachTo (*this);
@@ -359,6 +502,7 @@ void fD1STAudioProcessorEditor::doUndo()
     auto& mb = undoStack.getReference (undoPos);
     proc.setStateInformation (mb.getData(), (int) mb.getSize());
     rebindLens();
+    layoutContent();
 }
 
 void fD1STAudioProcessorEditor::doRedo()
@@ -369,6 +513,7 @@ void fD1STAudioProcessorEditor::doRedo()
     auto& mb = undoStack.getReference (undoPos);
     proc.setStateInformation (mb.getData(), (int) mb.getSize());
     rebindLens();
+    layoutContent();
 }
 
 void fD1STAudioProcessorEditor::copyAtoB()
@@ -451,118 +596,178 @@ void fD1STAudioProcessorEditor::paintContent (juce::Graphics& g)
     auto title = r.removeFromTop (kTitleH);
     if (logo.isValid())
     {
-        auto logoR = title.removeFromLeft (kTitleH).reduced (2);
+        const int lw = logo.getWidth() / 2;
+        const int lh = logo.getHeight() / 2;
+        auto logoR = title.removeFromLeft (lw).withSizeKeepingCentre (lw, lh);
         g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
         g.drawImage (logo, logoR.toFloat(), juce::RectanglePlacement::centred);
         title.removeFromLeft (6);
     }
     g.setColour (kSage);
     g.setFont (boldFont (18.f));
-    g.drawText ("fD1ST", title, juce::Justification::centredLeft, true);
-    g.setFont (juce::Font (juce::FontOptions (12.f)));
-    g.drawText ("Watch the signal break.", title, juce::Justification::centredRight, true);
+    g.drawText ("fD1ST", title.removeFromLeft (56), juce::Justification::centredLeft, true);
 }
 
 void fD1STAudioProcessorEditor::layoutContent()
 {
     auto r = content.getLocalBounds().reduced (kPad);
-    r.removeFromTop (kTitleH + 4);
-    auto bar = r.removeFromTop (24);
-    fullBtn.setBounds (bar.removeFromRight (48));
-    helpBtn.setBounds (bar.removeFromRight (28));
-    midiLearn.setBounds (bar.removeFromRight (52));
-    bypass.setBounds (bar.removeFromRight (70));
-    linphase.setBounds (bar.removeFromRight (40));
-    auto osArea = bar.removeFromRight (110);
-    osLabel.setBounds (osArea.removeFromLeft (22));
-    osBox.setBounds (osArea);
-    listenC.setBounds (bar.removeFromRight (32));
-    listenE.setBounds (bar.removeFromRight (32));
-    listenD.setBounds (bar.removeFromRight (40));
-    listenW.setBounds (bar.removeFromRight (32));
-    heat.s.setBounds ({}); // placed below
-    progLabel.setBounds (bar.removeFromLeft (44));
-    programBox.setBounds (bar.removeFromLeft (140));
-    undoBtn.setBounds (bar.removeFromLeft (48));
-    redoBtn.setBounds (bar.removeFromLeft (48));
-    abA.setBounds (bar.removeFromLeft (28));
-    abB.setBounds (bar.removeFromLeft (28));
-    abMorph.l.setBounds (bar.removeFromLeft (28));
-    abMorph.s.setBounds (bar.removeFromLeft (80));
+    auto bar = r.removeFromTop (kTitleH);
+    const int logoW = logoDrawW > 0 ? logoDrawW : kLogoH;
+    bar.removeFromLeft (logoW + 8 + 56);
+
+    fullBtn.setBounds (fitH (bar.removeFromRight (40), 24));
+    helpBtn.setBounds (fitH (bar.removeFromRight (22), 24));
+    midiLearn.setBounds (fitH (bar.removeFromRight (40), 24));
+    bypass.setBounds (fitH (bar.removeFromRight (52), 24));
+    linphase.setBounds (fitH (bar.removeFromRight (32), 24));
+    auto osArea = bar.removeFromRight (80);
+    osLabel.setBounds (fitH (osArea.removeFromLeft (20), 18));
+    osBox.setBounds (fitH (osArea, 24));
+    listenC.setBounds (fitH (bar.removeFromRight (26), 24));
+    listenE.setBounds (fitH (bar.removeFromRight (26), 24));
+    listenD.setBounds (fitH (bar.removeFromRight (34), 24));
+    listenW.setBounds (fitH (bar.removeFromRight (26), 24));
+
+    progLabel.setVisible (false);
+    progLabel.setBounds ({});
+    programBox.setBounds (fitH (bar.removeFromLeft (110), 24));
+    undoBtn.setBounds (fitH (bar.removeFromLeft (40), 24));
+    redoBtn.setBounds (fitH (bar.removeFromLeft (40), 24));
+    abA.setBounds (fitH (bar.removeFromLeft (22), 24));
+    abB.setBounds (fitH (bar.removeFromLeft (22), 24));
+    abMorph.l.setBounds (fitH (bar.removeFromLeft (22), 18));
+    abMorph.s.setBounds (fitH (bar.removeFromLeft (56), 18));
+
+    auto placeMacro = [&] (Knob& k)
+    {
+        placeKnob (k, bar.removeFromLeft (54).reduced (1, 0));
+    };
+    placeMacro (heat);
+    placeMacro (spread);
+    placeMacro (motionAmt);
     gpuBanner.setBounds (bar);
 
     r.removeFromTop (6);
-    path.setBounds (r.removeFromTop (64));
-    r.removeFromTop (6);
+    path.setBounds (r.removeFromTop (56));
+    routeBox.setVisible (true);
+    routeBox.setBounds (path.getX() + 8, path.getY() + 17, 80, 22);
 
-    auto macros = r.removeFromTop (88);
-    auto place = [&] (Knob& k, juce::Rectangle<int> cell)
+    hideStageControls();
+    const int route = (int) proc.apvts.getRawParameterValue (ParamID::glob_route)->load();
+    const int bands = juce::jlimit (1, 6, (int) proc.apvts.getRawParameterValue (ParamID::glob_bands)->load());
+    int maxLens = 0;
+    if (route == 3)
+        maxLens = bands - 1;
+    else if (route == 1 || route == 2 || route == 4 || route == 5)
+        maxLens = 1;
+    if (focusStage > maxLens)
     {
-        k.l.setBounds (cell.removeFromTop (14));
-        k.s.setBounds (cell);
-    };
-    const int mw = macros.getWidth() / 8;
-    place (heat, macros.removeFromLeft (mw).reduced (2, 0));
-    place (spread, macros.removeFromLeft (mw).reduced (2, 0));
-    place (motionAmt, macros.removeFromLeft (mw).reduced (2, 0));
-    place (globDrive, macros.removeFromLeft (mw).reduced (2, 0));
-    place (mix, macros.removeFromLeft (mw).reduced (2, 0));
-    place (out, macros.removeFromLeft (mw).reduced (2, 0));
-    place (tone, macros.removeFromLeft (mw).reduced (2, 0));
-    place (blend, macros.reduced (2, 0));
+        focusStage = 0;
+        path.selected = 0;
+        proc.focusLens.store (0);
+        rebindLens();
+    }
 
-    r.removeFromTop (4);
-    auto work = r.removeFromTop (300);
+    r.removeFromTop (6);
+    auto work = r.removeFromTop (340);
     focus.setBounds (work.removeFromLeft (520));
     work.removeFromLeft (8);
-    auto lens = work;
-    auto lensBar = lens.removeFromTop (24);
-    routeLabel.setBounds (lensBar.removeFromLeft (36));
-    routeBox.setBounds (lensBar.removeFromLeft (90));
-    chmodeBox.setBounds (lensBar.removeFromLeft (80));
-    stampBox.setBounds (lensBar.removeFromLeft (90));
-    lensOn.setBounds (lensBar.removeFromLeft (36));
-    lensMute.setBounds (lensBar.removeFromLeft (44));
-    lensSolo.setBounds (lensBar.removeFromLeft (44));
-    colorcomp.setBounds (lensBar.removeFromLeft (52));
-    auto row1 = lens.removeFromTop (90);
-    const int c1 = row1.getWidth() / 5;
-    place (drive, row1.removeFromLeft (c1).reduced (2, 0));
-    place (bias, row1.removeFromLeft (c1).reduced (2, 0));
-    place (lensMix, row1.removeFromLeft (c1).reduced (2, 0));
-    place (lensDyn, row1.removeFromLeft (c1).reduced (2, 0));
-    place (lensLevel, row1.reduced (2, 0));
-    auto row2 = lens.removeFromTop (90);
-    const int c2 = row2.getWidth() / 5;
-    place (lensPan, row2.removeFromLeft (c2).reduced (2, 0));
-    place (lensFb, row2.removeFromLeft (c2).reduced (2, 0));
-    place (lensFbHz, row2.removeFromLeft (c2).reduced (2, 0));
-    place (filtHz, row2.removeFromLeft (c2).reduced (2, 0));
-    place (filtQ, row2.reduced (2, 0));
-    auto row3 = lens.removeFromTop (90);
-    const int c3 = row3.getWidth() / 5;
-    place (bass, row3.removeFromLeft (c3).reduced (2, 0));
-    place (mid, row3.removeFromLeft (c3).reduced (2, 0));
-    place (treble, row3.removeFromLeft (c3).reduced (2, 0));
-    place (presence, row3.removeFromLeft (c3).reduced (2, 0));
-    auto filtRow = row3;
-    styleLabel.setBounds (filtRow.removeFromTop (14));
-    styleBox.setBounds (filtRow.removeFromTop (22));
-    filtBox.setBounds (filtRow);
+    auto stage = work;
+
+    if (focusStage == PathView::Drive)
+    {
+        auto row = stage.removeFromTop (110);
+        const int cw = row.getWidth() / 3;
+        placeKnob (globDrive, row.removeFromLeft (cw).reduced (4, 0));
+        placeKnob (tone, row.removeFromLeft (cw).reduced (4, 0));
+        auto ctl = row.reduced (8, 16);
+        colorcomp.setVisible (true);
+        colorcomp.setBounds (ctl.removeFromTop (24));
+        chmodeBox.setVisible (true);
+        chmodeBox.setBounds (ctl.removeFromTop (24));
+    }
+    else if (focusStage >= 0)
+    {
+        auto lensBar = stage.removeFromTop (24);
+        stampBox.setVisible (true);
+        stampBox.setBounds (lensBar.removeFromLeft (90));
+        lensOn.setVisible (true);
+        lensOn.setBounds (lensBar.removeFromLeft (36));
+        lensMute.setVisible (true);
+        lensMute.setBounds (lensBar.removeFromLeft (44));
+        lensSolo.setVisible (true);
+        lensSolo.setBounds (lensBar.removeFromLeft (44));
+        styleLabel.setVisible (true);
+        styleLabel.setBounds (lensBar.removeFromLeft (40));
+        styleBox.setVisible (true);
+        styleBox.setBounds (lensBar.removeFromLeft (90));
+        filtBox.setVisible (true);
+        filtBox.setBounds (lensBar.removeFromLeft (90));
+        auto row1 = stage.removeFromTop (100);
+        const int c1 = row1.getWidth() / 4;
+        placeKnob (drive, row1.removeFromLeft (c1).reduced (2, 0));
+        placeKnob (bias, row1.removeFromLeft (c1).reduced (2, 0));
+        placeKnob (lensMix, row1.removeFromLeft (c1).reduced (2, 0));
+        placeKnob (lensLevel, row1.reduced (2, 0));
+        auto row2 = stage.removeFromTop (100);
+        const int c2 = row2.getWidth() / 6;
+        placeKnob (filtHz, row2.removeFromLeft (c2).reduced (2, 0));
+        placeKnob (filtQ, row2.removeFromLeft (c2).reduced (2, 0));
+        placeKnob (bass, row2.removeFromLeft (c2).reduced (2, 0));
+        placeKnob (mid, row2.removeFromLeft (c2).reduced (2, 0));
+        placeKnob (treble, row2.removeFromLeft (c2).reduced (2, 0));
+        placeKnob (presence, row2.reduced (2, 0));
+        auto row3 = stage.removeFromTop (100);
+        const int c3 = row3.getWidth() / 4;
+        placeKnob (lensDyn, row3.removeFromLeft (c3).reduced (2, 0));
+        placeKnob (lensPan, row3.removeFromLeft (c3).reduced (2, 0));
+        placeKnob (lensFb, row3.removeFromLeft (c3).reduced (2, 0));
+        placeKnob (lensFbHz, row3.reduced (2, 0));
+    }
+    else if (focusStage == PathView::Cavity)
+    {
+        auto row = stage.removeFromTop (110);
+        const int cw = row.getWidth() / 4;
+        placeKnob (cavAmt, row.removeFromLeft (cw).reduced (2, 0));
+        placeKnob (cavTime, row.removeFromLeft (cw).reduced (2, 0));
+        placeKnob (cavNote, row.removeFromLeft (cw).reduced (2, 0));
+        auto ctl = row.reduced (8, 16);
+        fbModeBox.setVisible (true);
+        fbModeBox.setBounds (ctl.removeFromTop (24));
+        cavSafe.setVisible (true);
+        cavSafe.setBounds (ctl.removeFromTop (24));
+    }
+    else if (focusStage == PathView::Comp)
+    {
+        placeKnob (comp, stage.removeFromTop (140).withSizeKeepingCentre (120, 140));
+    }
+    else if (focusStage == PathView::Out)
+    {
+        auto row = stage.removeFromTop (110);
+        const int cw = row.getWidth() / 3;
+        placeKnob (mix, row.removeFromLeft (cw).reduced (4, 0));
+        placeKnob (out, row.removeFromLeft (cw).reduced (4, 0));
+        placeKnob (blend, row.reduced (4, 0));
+    }
+    else
+    {
+        stageHint.setVisible (true);
+        stageHint.setText (focusStage == PathView::Clip ? "Hard clip at the rail." : "Input tap.",
+                           juce::dontSendNotification);
+        stageHint.setBounds (stage);
+    }
 
     r.removeFromTop (4);
-    auto ctx = r.removeFromTop (88);
-    const int cw = ctx.getWidth() / 8;
-    place (cavAmt, ctx.removeFromLeft (cw).reduced (2, 0));
-    place (cavTime, ctx.removeFromLeft (cw).reduced (2, 0));
-    place (cavNote, ctx.removeFromLeft (cw).reduced (2, 0));
-    place (comp, ctx.removeFromLeft (cw).reduced (2, 0));
-    place (xover1, ctx.removeFromLeft (cw).reduced (2, 0));
-    place (xover2, ctx.removeFromLeft (cw).reduced (2, 0));
-    place (xover3, ctx.removeFromLeft (cw).reduced (2, 0));
-    auto cavCtl = ctx;
-    fbModeBox.setBounds (cavCtl.removeFromTop (22));
-    cavSafe.setBounds (cavCtl.removeFromTop (22));
+    auto ctx = r.removeFromTop (100);
+    if (route == 3)
+    {
+        auto xrow = ctx.removeFromRight (240);
+        const int xw = xrow.getWidth() / 3;
+        placeKnob (xover1, xrow.removeFromLeft (xw).reduced (2, 0));
+        placeKnob (xover2, xrow.removeFromLeft (xw).reduced (2, 0));
+        placeKnob (xover3, xrow.reduced (2, 0));
+    }
+    context.setBounds (ctx);
 
     auto motionRow = r.removeFromTop (28);
     wireLabel.setBounds (motionRow.removeFromLeft (52));

@@ -43,6 +43,9 @@ private:
     void paintContent (juce::Graphics&);
     void layoutContent();
     void bindKnob (Knob& k, const char* id, const juce::String& name);
+    void hideKnob (Knob& k);
+    void placeKnob (Knob& k, juce::Rectangle<int> cell);
+    void hideStageControls();
     void setListen (int id);
     void rebindLens();
     void pushUndo();
@@ -59,8 +62,11 @@ private:
     bool gpuOk = false;
 
     juce::Image logo;
+    int logoDrawW = 0;
+    int focusStage = PathView::Drive;
     PathView path { proc };
     FocusView focus { proc };
+    FocusView context { proc, true };
     Knob mix, out, globDrive, drive, heat, spread, motionAmt, bias;
     Knob blend, tone, cavTime, cavAmt, cavNote, comp, lensMix, lensDyn, lensLevel, lensPan;
     Knob lensFb, lensFbHz, filtHz, filtQ, bass, mid, treble, presence, xover1, xover2, xover3, abMorph;
@@ -73,6 +79,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAtt, linAtt, colorAtt, safeAtt, onAtt, muteAtt, soloAtt;
     juce::TooltipWindow tip { this, 400 };
     juce::Label helpText;
+    juce::Label stageHint;
 
     juce::Array<juce::MemoryBlock> undoStack;
     int undoPos = -1;
