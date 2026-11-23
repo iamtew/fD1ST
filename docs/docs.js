@@ -2,6 +2,12 @@
   var pages = [
     { id: "overview", title: "Overview", icon: "book" },
     { id: "listen", title: "Listen", icon: "settings" },
+    { id: "drive", title: "Drive", icon: "sine-wave" },
+    { id: "lens", title: "Lens", icon: "spark" },
+    { id: "cavity", title: "Cavity", icon: "pages" },
+    { id: "comp", title: "Comp", icon: "eq" },
+    { id: "clip", title: "Clip", icon: "square-wave" },
+    { id: "out", title: "Out", icon: "settings" },
     { id: "spec", title: "Spec", icon: "page", group: "Internals", src: "SPEC.md" },
     { id: "architecture", title: "Architecture", icon: "cpu", group: "Internals", src: "ARCHITECTURE.md" },
     { id: "dsp", title: "DSP notes", icon: "square-wave", group: "Internals", src: "DSP_NOTES.md" },
@@ -57,8 +63,8 @@
     });
     var node;
     while ((node = walk.nextNode())) {
-      if (node.nodeValue.indexOf("fN0B") !== -1)
-        node.nodeValue = node.nodeValue.split("fN0B").join("\u0192N0B");
+      if (node.nodeValue.indexOf("fD1ST") !== -1)
+        node.nodeValue = node.nodeValue.split("fD1ST").join("\u0192D1ST");
     }
   }
 
@@ -92,7 +98,7 @@
       else link.removeAttribute("aria-current");
     });
     var page = pages.filter(function (item) { return item.id === id; })[0];
-    document.title = page.title + " | \u0192N0B";
+    document.title = page.title + " | \u0192D1ST";
     article.innerHTML = "<p class=\"muted\">Loading…</p>";
     var file = page.src || ("md/" + id + ".md");
     fetch(file)
