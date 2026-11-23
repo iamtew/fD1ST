@@ -29,4 +29,4 @@ The Mac zip is ad-hoc signed, not notarized. Gatekeeper blocks it until you righ
 
 `just build-dist` on Windows writes the VST3 zip and the MSI. Building the MSI needs the .NET 8 SDK.
 
-`just docs-screenshots` overwrites `docs/Screenshot1.png` and `docs/Screenshot2.png`. Needs a debug standalone (`just build-debug`) and an interactive desktop.
+`just docs-screenshots` overwrites `docs/drive.png`, `lens.png`, `cavity.png`, `comp.png`, `clip.png`, and `out.png`. Needs a debug standalone (`just build-debug`) and an interactive desktop.

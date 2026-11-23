@@ -33,6 +33,6 @@ Closed in the plugin. Left here so a later Clanker does not reopen them as work.
 ## Meat Bag
 
 - [x] Replace `assets/logo.png` (placeholder) with the Affinity export, then `just icon` / `just docs-logo`
-- [ ] `just docs-screenshots` once the editor is worth shooting
+- [x] `just docs-screenshots` once the editor is worth shooting
 - [ ] First numeric tag (`0.0.1`, matches the jucer) when a build is worth shipping
 - [ ] Catalog tile on Stupid Audio when ready to be public

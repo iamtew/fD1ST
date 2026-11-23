@@ -1,9 +1,24 @@
-﻿# Launch debug standalone and overwrite docs/Screenshot*.png.
-# Clicks are editor-client coords (520x280), scaled to the real client.
+﻿# Launch debug standalone, click Path Focus nodes, overwrite docs/*.png.
+# Clicks are editor-client coords (1100x720), scaled to the real client, below any mute banner.
 $ErrorActionPreference = 'Stop'
 
-$editorW = 520
-$editorH = 280
+$editorW = 1100
+$editorH = 720
+# Path: pad 10, title 64, gap 6, height 56. PathView gutter 96, row reduced(6,8).
+# One route: 7 nodes In Drive Lens Cavity Comp Clip Out. Skip In (same knobs as Drive).
+$pathX = 10
+$pathY = 10 + 64 + 6
+$pathW = $editorW - 20
+$pathH = 56
+$gutter = 96
+$n = 7
+$rowW = $pathW - $gutter - 12
+$nw = [Math]::Max(40.0, ($rowW - 8.0 * ($n - 1)) / $n)
+$pathCy = $pathY + [int]($pathH / 2)
+
+function Node-X([int]$i) {
+    return [int]($pathX + $gutter + 6 + $i * ($nw + 8) + $nw / 2)
+}
 
 Add-Type -AssemblyName System.Drawing, System.Windows.Forms
 Add-Type @"
@@ -59,6 +74,22 @@ function Get-WinRect {
     return @{ L = $l; T = $t; R = $r; B = $b }
 }
 
+function Click-Editor([int]$x, [int]$y) {
+    $cw = 0; $ch = 0; $ox = 0; $oy = 0
+    [void][Win]::ClientSize($hwnd, [ref]$cw, [ref]$ch)
+    [void][Win]::ClientOrigin($hwnd, [ref]$ox, [ref]$oy)
+    $scale = $cw / $editorW
+    $px = $ox + [int]($x * $scale)
+    $py = $oy + [int](($ch - $editorH * $scale) + $y * $scale)
+    [void][Win]::ShowWindow($hwnd, 9)
+    [void][Win]::SetForegroundWindow($hwnd)
+    Start-Sleep -Milliseconds 150
+    [void][Win]::SetCursorPos($px, $py)
+    [Win]::mouse_event(0x0002, 0, 0, 0, 0)
+    [Win]::mouse_event(0x0004, 0, 0, 0, 0)
+    Start-Sleep -Milliseconds 400
+}
+
 function Save-Shot([string]$name) {
     $r = Get-WinRect
     $w = $r.R - $r.L
@@ -72,8 +103,17 @@ function Save-Shot([string]$name) {
 }
 
 Start-Sleep -Seconds 1
-Save-Shot 'Screenshot1'
-Save-Shot 'Screenshot2'
+$pages = @('drive', 'lens', 'cavity', 'comp', 'clip', 'out')
+$nodeI = @(1, 2, 3, 4, 5, 6)
+for ($i = 0; $i -lt $pages.Count; $i++) {
+    if ($i -gt 0) { Click-Editor (Node-X $nodeI[$i]) $pathCy }
+    Save-Shot $pages[$i]
+}
+
+foreach ($old in @('Screenshot1.png', 'Screenshot2.png')) {
+    $p = Join-Path $out $old
+    if (Test-Path $p) { Remove-Item $p -Force }
+}
 
 Stop-Process -Id $proc.Id -Force
-Write-Host "wrote Screenshot1.png Screenshot2.png in $out"
+Write-Host "wrote $($pages.Count) pngs in $out"
