@@ -26,8 +26,12 @@
       <svg class="icon" aria-hidden="true"><use href="icons.svg#menu"></use></svg>
     </button>
     <nav id="site-nav">
-      <a href="#listen">Listen</a>
-      <a href="#path">Path</a>
+      <a href="#drive">Drive</a>
+      <a href="#lens">Lens</a>
+      <a href="#cavity">Cavity</a>
+      <a href="#comp">Comp</a>
+      <a href="#clip">Clip</a>
+      <a href="#out">Out</a>
       <a href="docs.html">Manual</a>
       <a href="https://audio.stupid.systems/">Stupid Audio</a>
     </nav>
@@ -57,20 +61,64 @@
       <p class="meta">VST3. Windows, Linux, and Mac.</p>
     </div>
 
-    <section id="listen" class="feature">
+    <section id="drive" class="feature">
       <div>
-        <h2>Listen</h2>
-        <p>Wet, Dry, Delta, and Caustic. Delta is the grit you added. Caustic is that grit with the body stripped. Keys: W, Shift+D, E, C.</p>
+        <h2>Drive</h2>
+        <p>Launch Focus. Input Drive, Tone, Color, and channel mode sit here until you click a Path node. The Transfer curve still draws lens 0 in One — that is the shaper.</p>
       </div>
-      <img class="shot" src="Screenshot1.png" alt="The &fnof;D1ST editor">
+      <button type="button" class="shot-open" data-shot="drive.png" data-shot-alt="&fnof;D1ST Drive Focus">
+        <img class="shot" src="drive.png" alt="&fnof;D1ST Drive Focus">
+      </button>
     </section>
 
-    <section id="path" class="feature">
+    <section id="lens" class="feature">
       <div>
-        <h2>Path</h2>
-        <p>Six lenses, six routes: One, Stack, Split, Prism, Axis, Cavity. Click a node to Focus it. Motion wires onto the path. That graph is the product.</p>
+        <h2>Lens</h2>
+        <p>Click a lens on the Path. Style, filter, drive, bias, mix, and the Transfer Focus. That plot is how you see the signal break.</p>
       </div>
-      <img class="shot" src="Screenshot2.png" alt="&fnof;D1ST Path">
+      <button type="button" class="shot-open" data-shot="lens.png" data-shot-alt="&fnof;D1ST Lens Focus">
+        <img class="shot" src="lens.png" alt="&fnof;D1ST Lens Focus">
+      </button>
+    </section>
+
+    <section id="cavity" class="feature">
+      <div>
+        <h2>Cavity</h2>
+        <p>Delay feedback after the lenses. Amount, time or note, Safe clamp. The Path node pulses at the delay period.</p>
+      </div>
+      <button type="button" class="shot-open" data-shot="cavity.png" data-shot-alt="&fnof;D1ST Cavity Focus">
+        <img class="shot" src="cavity.png" alt="&fnof;D1ST Cavity Focus">
+      </button>
+    </section>
+
+    <section id="comp" class="feature">
+      <div>
+        <h2>Comp</h2>
+        <p>One amount for the output compressor and the cavity loop. The Path node squeezes with gain reduction.</p>
+      </div>
+      <button type="button" class="shot-open" data-shot="comp.png" data-shot-alt="&fnof;D1ST Comp Focus">
+        <img class="shot" src="comp.png" alt="&fnof;D1ST Comp Focus">
+      </button>
+    </section>
+
+    <section id="clip" class="feature">
+      <div>
+        <h2>Clip</h2>
+        <p>Hard clip at the rail, after Out. No extra knobs. The node is the reminder.</p>
+      </div>
+      <button type="button" class="shot-open" data-shot="clip.png" data-shot-alt="&fnof;D1ST Clip Focus">
+        <img class="shot" src="clip.png" alt="&fnof;D1ST Clip Focus">
+      </button>
+    </section>
+
+    <section id="out" class="feature">
+      <div>
+        <h2>Out</h2>
+        <p>Mix, Out, and Blend. Mix is wet/dry after Listen. Blend is how hard Stack, Split, and friends lean.</p>
+      </div>
+      <button type="button" class="shot-open" data-shot="out.png" data-shot-alt="&fnof;D1ST Out Focus">
+        <img class="shot" src="out.png" alt="&fnof;D1ST Out Focus">
+      </button>
     </section>
   </main>
 
@@ -106,6 +154,13 @@
       </div>
     </div>
     <img class="dl-logo" src="logo.png" alt="" width="192" height="192">
+  </dialog>
+
+  <dialog id="shot" class="shot-dialog">
+    <button type="button" class="dl-close" data-shot-close aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="icons.svg#close"></use></svg>
+    </button>
+    <img id="shot-full" alt="">
   </dialog>
 
   <script src="icons.js"></script>
