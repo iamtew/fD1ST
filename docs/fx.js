@@ -100,18 +100,20 @@ const WET_PASSES = [[56, 0.05], [28, 0.1], [12, 0.22], [4, 0.45]];
 const GHOST_PASSES = [[40, 0.06], [10, 0.14]];
 const RAIL_PASSES = [[28, 0.05], [8, 0.12]];
 const HARM_PASSES = [[18, 0.06], [4, 0.12]];
+const HIT_MAX = 10;         // clip sparks; CYCLES*2 plus a couple off-screen
 
 // Drive 0..1: sine stays round, then tanh-clips against the rails, harmonics leak.
 function satScene(PIXI, glow) {
   const root = new PIXI.Container();
   const g = new PIXI.Graphics();
   g.blendMode = 'add';
-
-  const bloomN = glowSprite(PIXI, glow, C.white);
-  const bloomS = glowSprite(PIXI, glow, C.mint);
-  bloomN.alpha = bloomS.alpha = 0;
-
-  root.addChild(g, bloomN, bloomS);
+  const hits = [];
+  for (let i = 0; i < HIT_MAX; i++) {
+    const s = glowSprite(PIXI, glow, C.white);
+    s.alpha = 0;
+    hits.push(s);
+  }
+  root.addChild(g, ...hits);
   root.alpha = fxOnly ? 1 : 0.62;
 
   return {
@@ -159,16 +161,26 @@ function satScene(PIXI, glow) {
       glowLine(g, ghost, C.sage, 1.2, GHOST_PASSES);
       glowLine(g, wet, C.mint, 1 + drive * 0.6, WET_PASSES);
 
-      const bloom = 0.12 + env * 0.55;
-      const sx = w / 28;
-      const sy = 18 + env * 36;
-      bloomN.x = bloomS.x = w * 0.5;
-      bloomN.y = cy - amp;
-      bloomS.y = cy + amp;
-      bloomN.scale.set(sx, sy);
-      bloomS.scale.set(sx, sy);
-      bloomN.alpha = bloom;
-      bloomS.alpha = bloom * 0.7;
+      // Pulse lives at rail contacts, not a viewport fill.
+      const th0 = (-20 / w) * CYCLES * TAU + phase;
+      const th1 = ((w + 20) / w) * CYCLES * TAU + phase;
+      let nPeak = Math.ceil((th0 - 0.5 * Math.PI) / Math.PI);
+      const hitAlpha = env * 0.55;
+      const hitScale = 0.9 + env * 1.4;
+      let hi = 0;
+      while (hi < HIT_MAX) {
+        const th = 0.5 * Math.PI + nPeak * Math.PI;
+        if (th > th1) break;
+        const north = (nPeak & 1) === 0;
+        const s = hits[hi++];
+        s.x = ((th - phase) / (CYCLES * TAU)) * w;
+        s.y = north ? cy - amp : cy + amp;
+        s.tint = north ? C.white : C.mint;
+        s.alpha = hitAlpha * (north ? 1 : 0.7);
+        s.scale.set(hitScale);
+        nPeak++;
+      }
+      for (; hi < HIT_MAX; hi++) hits[hi].alpha = 0;
     },
   };
 }
