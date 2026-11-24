@@ -4,7 +4,7 @@ Spec: [docs/SPEC.md](docs/SPEC.md).
 
 DIST distortion / saturation FX. Spoken name **DIST**. Never “fist”. VST3 + Standalone. Part of Stupid Audio; sister of fR3Z0 and fN0B. Work in progress — not on the catalog until the Meat Bag asks.
 
-Build order in the spec. This tree is past **step 9**: DSP path, Focus viz, Motion, factory programs, `--self-test`, Superb 32×, linphase, LR Prism. Catalog off until asked.
+Build order in the spec. This tree is past **step 9**: DSP path, Focus viz, Motion, factory programs, `--self-test`, Superb 16×, linphase, LR Prism. Catalog off until asked.
 
 ## Stack
 - JUCE (Projucer workflow only – no CMake)

@@ -21,7 +21,7 @@ Each numbered step is a **compiling VST3**. Do not skip ahead to 32× FIR. v1 sh
 
 Closed in the plugin. Left here so a later Clanker does not reopen them as work.
 
-- [x] Superb still equals Good — real 32× FIR OS
+- [x] Superb still equals Good — real 16× FIR OS (JUCE halfband max)
 - [x] Linphase stays off — enum present, UI disabled / treated as off
 - [x] Prism splits are complementary one-pole, not Linkwitz-Riley 24 dB
 - [x] Filter types 4–8 (Notch, Peak, Morph, Comb, Resample) are dry

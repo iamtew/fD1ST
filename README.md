@@ -4,7 +4,7 @@
 
 **fD1ST** is DIST, a stereo distortion / saturation effect. Spoken name DIST. The leading *f* is fx. Never “fist.” Tagline: **Watch the signal break.**
 
-One through Cavity, 34 styles, Path/Focus/Motion, 32× Superb, linear-phase OS, 48 factory programs. Work in progress for the catalog.
+One through Cavity, 34 styles, Path/Focus/Motion, 16× Superb, linear-phase OS, 48 factory programs. Work in progress for the catalog.
 
 `just self-test` runs the standalone with `--self-test`.
 

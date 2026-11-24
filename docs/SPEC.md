@@ -373,7 +373,7 @@ No extra gain. Axis routing uses this around lenses 0 and 1. `glob_chmode` Axis 
 | 0 | Off | 1 |
 | 1 | Fast | 2 |
 | 2 | Good | 8 |
-| 3 | Superb | 32 |
+| 3 | Superb | 16 (JUCE halfband max) |
 
 Polyphase FIR. `glob_linphase` on → linear-phase OS always; off → min-phase OS allowed. Report `getLatencySamples()`. Default **Good**. Superb may be expensive.
 
@@ -887,7 +887,7 @@ Public pages used only to ensure we did not *drop* a useful control class. They 
 
 | Control class from public saturators | Where it lives in fD1ST |
 |--------------------------------------|-------------------------|
-| Many bands, slopes, lin-phase, 8×/32× OS | Prism, glob_os, glob_linphase |
+| Many bands, slopes, lin-phase, 8×/16× OS | Prism, glob_os, glob_linphase |
 | Per-band drive, mix, ring, dyn, tone, level, solo | Lens |
 | Style families | Original IDs 0–33 + tints |
 | Deep modulation | Motion / Wiring |
@@ -938,4 +938,4 @@ Each step is a **compiling VST3**. Do not skip ahead to 32× FIR.
 8. Motion ValueTree + one Orbit + Wiring.
 9. Remaining sources, factory JSON, `--self-test`.
 
-**v1 ship = through step 9.** Step 5 is green: Superb is 32×; linphase selects FIR OS and FIR Prism splits.
+**v1 ship = through step 9.** Step 5 is green: Superb is 16× (JUCE halfband max); linphase selects FIR OS and FIR Prism splits.

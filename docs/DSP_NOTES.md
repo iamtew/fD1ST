@@ -1,6 +1,6 @@
 # DSP notes
 
-Spec path. Superb is 32×. Linear phase selects FIR oversampling and FIR Prism splits.
+Spec path. Superb is 16× (JUCE halfband max is 2^4; 32× asserts). Linear phase selects FIR oversampling and FIR Prism splits.
 
 - Oversampling wraps global Drive through lenses, Cavity, and the ±1 rail clip. Mix and Listen are after downsample.
 - Glow–SatHeavy (0–22) use RMS makeup vs a 0 dBFS 200 Hz sine. Facet/Wreck (23–33) peak-normalize.

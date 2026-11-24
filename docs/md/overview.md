@@ -2,7 +2,7 @@
 
 fD1ST is DIST, a stereo distortion and saturation effect.
 
-Path, Focus, Motion. 34 styles, six routes, Superb 32×, linear phase, 48 factory programs.
+Path, Focus, Motion. 34 styles, six routes, Superb 16×, linear phase, 48 factory programs.
 
 Bypass copies input to output. Keys: W wet, Shift+D dry, E delta, C caustic.
 

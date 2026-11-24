@@ -298,6 +298,18 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     colourCombo (filtBox);
     colourCombo (stampBox);
     colourCombo (srcBox);
+    auto fillChoice = [] (juce::ComboBox& b, const char* const* names, int n)
+    {
+        b.clear (juce::dontSendNotification);
+        for (int i = 0; i < n; ++i)
+            b.addItem (names[i], i + 1);
+    };
+    fillChoice (osBox, kOsNames, kOsCount);
+    fillChoice (styleBox, kStyleNames, kStyles);
+    fillChoice (routeBox, kRouteNames, kRoutes);
+    fillChoice (chmodeBox, kChmodeNames, kChmodeCount);
+    fillChoice (fbModeBox, kFbModeNames, kFbModeCount);
+    fillChoice (filtBox, kFiltTypeNames, kFiltTypeCount);
     for (int c = 0; c < fd1st::kFactoryCatCount; ++c)
     {
         const auto& cat = fd1st::kFactoryCats[c];
@@ -331,7 +343,7 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     destBox.addItem (ParamID::glob_spread, 3);
     destBox.addItem (ParamID::cDriveDb[0], 4);
     destBox.addItem (ParamID::cBias[0], 5);
-    destBox.setSelectedId (1);
+    destBox.setSelectedId (1, juce::dontSendNotification);
 
     osLabel.setText ("OS", juce::dontSendNotification);
     styleLabel.setText ("Style", juce::dontSendNotification);
@@ -474,7 +486,7 @@ fD1STAudioProcessorEditor::fD1STAudioProcessorEditor (fD1STAudioProcessor& p)
     gl.attachTo (*this);
     gpuOk = true;
     gpuBanner.setVisible (false);
-    gl.setContinuousRepainting (true);
+    gl.setContinuousRepainting (false);
     setWantsKeyboardFocus (true);
     baseW = kEditorW;
     baseH = kEditorH;
