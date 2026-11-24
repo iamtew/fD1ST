@@ -75,6 +75,8 @@ public:
         on = true;
         mute = false;
         skipped = false;
+        eqOn = false;
+        lastFiltType = -1;
         applyCount = 0;
     }
 
@@ -97,12 +99,15 @@ public:
         {
             filt.setCutoffFrequency (filtHz);
             filt.setResonance (filtQ);
-            if (filtType == 1)
-                filt.setType (T::lowpass);
-            else if (filtType == 2)
-                filt.setType (T::bandpass);
-            else
-                filt.setType (T::highpass);
+            if (filtType != lastFiltType)
+            {
+                if (filtType == 1)
+                    filt.setType (T::lowpass);
+                else if (filtType == 2)
+                    filt.setType (T::bandpass);
+                else
+                    filt.setType (T::highpass);
+            }
         }
         else if (filtType == 4)
             peakBq.notch ((float) sampleRate, filtHz, filtQ);
@@ -119,15 +124,24 @@ public:
             filt.setResonance (0.707f);
             filtBp.setResonance (0.707f);
             filtHp.setResonance (0.707f);
-            filt.setType (T::lowpass);
-            filtBp.setType (T::bandpass);
-            filtHp.setType (T::highpass);
+            if (filtType != lastFiltType)
+            {
+                filt.setType (T::lowpass);
+                filtBp.setType (T::bandpass);
+                filtHp.setType (T::highpass);
+            }
         }
-        const float sr = (float) sampleRate;
-        bass.lowShelf (sr, 120.f, dbToLin (bassDb));
-        mid.peak (sr, 800.f, 0.8f, dbToLin (midDb));
-        treble.highShelf (sr, 4000.f, dbToLin (trebleDb));
-        pres.peak (sr, 8000.f, 1.2f, dbToLin (presDb));
+        lastFiltType = filtType;
+        eqOn = std::abs (bassDb) > 0.01f || std::abs (midDb) > 0.01f
+            || std::abs (trebleDb) > 0.01f || std::abs (presDb) > 0.01f;
+        if (eqOn)
+        {
+            const float sr = (float) sampleRate;
+            bass.lowShelf (sr, 120.f, dbToLin (bassDb));
+            mid.peak (sr, 800.f, 0.8f, dbToLin (midDb));
+            treble.highShelf (sr, 4000.f, dbToLin (trebleDb));
+            pres.peak (sr, 8000.f, 1.2f, dbToLin (presDb));
+        }
     }
 
     void tick (float driveDb, float heat, float drivePan, float bias, float mix, float levelDb, float pan,
@@ -180,10 +194,12 @@ public:
         if (filtPos != 0)
             y = filterSample (y);
 
-        y = pres.process (treble.process (mid.process (bass.process (y))));
+        if (eqOn)
+            y = pres.process (treble.process (mid.process (bass.process (y))));
         y = dry + (y - dry) * mx;
         y *= lvl * (channel == 0 ? panL : panR);
-        writeRing (y);
+        if (fbAmt > 0.0001f)
+            writeRing (y);
         return y;
     }
 
@@ -207,8 +223,8 @@ private:
     float g = 1.f, dp = 0.f, b = 0.f, m = 1.f, mx = 1.f, lvl = 1.f, panL = 1.f, panR = 1.f;
     float filtHz = 1200.f, filtQ = 0.707f, hold = 0;
     int holdLeft = 0;
-    int style = 0, filtType = 0, filtPos = 1;
-    bool on = true, mute = false, fbSafe = true, skipped = false;
+    int style = 0, filtType = 0, filtPos = 1, lastFiltType = -1;
+    bool on = true, mute = false, fbSafe = true, skipped = false, eqOn = false;
     juce::dsp::StateVariableTPTFilter<float> filt, filtBp, filtHp;
     Biquad peakBq, bass, mid, treble, pres;
 

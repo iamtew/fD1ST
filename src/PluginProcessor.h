@@ -72,6 +72,7 @@ private:
     void updateOsRate();
     void updatePrism();
     void ensureHostSize (int n);
+    void cacheWet();
     float cavityTimeSec() const;
     double hostBpm() const;
     void prismSplit (int split, float inL, float inR, float osSr, float& loL, float& loR, float& hiL, float& hiR);
@@ -79,12 +80,13 @@ private:
     std::atomic<float> mixMod { 0 };
     std::array<fd1st::LensProcessor, 6> lenses;
     using Os = juce::dsp::Oversampling<float>;
+    // JUCE halfband OS factor is log2: 1=2×, 3=8×, 4=16× (5=32× asserts).
     Os os2i { 2, 1, Os::filterHalfBandPolyphaseIIR, false, false };
     Os os8i { 2, 3, Os::filterHalfBandPolyphaseIIR, false, false };
-    Os os32i { 2, 5, Os::filterHalfBandPolyphaseIIR, false, false };
+    Os os32i { 2, 4, Os::filterHalfBandPolyphaseIIR, false, false };
     Os os2f { 2, 1, Os::filterHalfBandFIREquiripple, false, false };
     Os os8f { 2, 3, Os::filterHalfBandFIREquiripple, false, false };
-    Os os32f { 2, 5, Os::filterHalfBandFIREquiripple, false, false };
+    Os os32f { 2, 4, Os::filterHalfBandFIREquiripple, false, false };
 
     juce::AudioBuffer<float> dryBuf;
     std::array<std::vector<float>, 2> dryDelay {};
@@ -97,6 +99,19 @@ private:
     int program = 0;
     double hostSr = 48000.0;
     int hostBlock = 512;
+    double cachedBpm = 120.0;
+    struct WetCache
+    {
+        int route = 0, chmode = 0, bands = 3;
+        bool color = true, safe = true, hpf = true, anySolo = false;
+        bool solo[6] {};
+        float globComp = 0, cavDel = 1.f;
+        struct Lens
+        {
+            float pan = 0, driveDb = 0, drivePan = 0, bias = 0, mix = 1.f;
+            float levelDb = 0, fbAmt = 0, fbHz = 220.f, dyn = 0;
+        } lens[6];
+    } wet;
     float prismLp[5][2] {}, prismLp2[5][2] {};
     float toneZ[2] {}, tonePostZ[2] {};
     float cavHp[2] {};

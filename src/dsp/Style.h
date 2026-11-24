@@ -232,10 +232,12 @@ inline float makeupGain (int id, float driveDb, float sr)
     static int ready = 0;
     if (! ready)
     {
+        // Table is 200 Hz probes; lock to 48 kHz so OS rate does not poison it.
+        const float tabSr = 48000.f;
         for (int s = 0; s < 34; ++s)
             for (int i = 0; i < 37; ++i)
-                tab[s][i] = (s <= 22) ? rmsNorm (s, (float) i, sr)
-                                      : peakNorm (s, (float) i, sr);
+                tab[s][i] = (s <= 22) ? rmsNorm (s, (float) i, tabSr)
+                                      : peakNorm (s, (float) i, tabSr);
         ready = 1;
     }
     const float t = driveDb < 0.f ? 0.f : (driveDb > 36.f ? 36.f : driveDb);

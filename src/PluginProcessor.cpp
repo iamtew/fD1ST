@@ -31,7 +31,7 @@ int fD1STAudioProcessor::osFactor() const
         return 2;
     if (id == 2)
         return 8;
-    return 32;
+    return 16;
 }
 
 bool fD1STAudioProcessor::linphaseOn() const
@@ -86,7 +86,7 @@ float fD1STAudioProcessor::cavityTimeSec() const
         return 1.f / juce::jlimit (27.5f, 4186.f, loadf (ParamID::glob_fb_note_hz, 110.f));
     static const float beats[] = { 0.125f, 0.25f, 0.5f, 1.f, 2.f, 4.f };
     const int div = juce::jlimit (0, 5, (int) loadf (ParamID::glob_fb_div, 2.f));
-    float t = beats[div] * 60.f / (float) hostBpm();
+    float t = beats[div] * 60.f / (float) (cachedBpm > 1.0 ? cachedBpm : 120.0);
     if (mode == 2)
         t *= 2.f / 3.f;
     if (mode == 3)
@@ -144,7 +144,8 @@ void fD1STAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     hostSr = sampleRate > 1.0 ? sampleRate : 48000.0;
     hostBlock = 0;
     dryBuf.setSize (0, 0);
-    ensureHostSize (samplesPerBlock);
+    // Hosts often send a smaller callback than this max. Grow once, never per block.
+    ensureHostSize (juce::jmax (4096, samplesPerBlock));
 
     const double osSr = hostSr * (double) osFactor();
     juce::dsp::ProcessSpec spec { osSr, (juce::uint32) (hostBlock * 32), 2 };
@@ -344,6 +345,42 @@ float fD1STAudioProcessor::loadf (const char* id, float fallback) const
     return fallback;
 }
 
+void fD1STAudioProcessor::cacheWet()
+{
+    wet.route = (int) loadf (ParamID::glob_route);
+    wet.chmode = (int) loadf (ParamID::glob_chmode);
+    wet.bands = juce::jlimit (1, 6, (int) loadf (ParamID::glob_bands, 3.f));
+    wet.color = loadf (ParamID::glob_colorcomp) > 0.5f;
+    wet.safe = loadf (ParamID::glob_fb_safe) > 0.5f;
+    wet.hpf = loadf (ParamID::glob_comp_hpf) > 0.5f;
+    wet.globComp = loadf (ParamID::glob_comp);
+    wet.cavDel = cavityTimeSec() * (float) hostSr * (float) osFactor();
+    wet.anySolo = false;
+    auto inRoute = [&] (int i) -> bool
+    {
+        if (wet.route == 3)
+            return i < wet.bands;
+        if (wet.route <= 0)
+            return i == 0;
+        return i <= 1;
+    };
+    for (int i = 0; i < 6; ++i)
+    {
+        wet.solo[i] = loadf (ParamID::cSolo[i]) > 0.5f;
+        if (wet.solo[i] && inRoute (i))
+            wet.anySolo = true;
+        wet.lens[i].pan = loadf (ParamID::cPan[i]);
+        wet.lens[i].driveDb = loadf (ParamID::cDriveDb[i]);
+        wet.lens[i].drivePan = loadf (ParamID::cDrivePan[i]);
+        wet.lens[i].bias = loadf (ParamID::cBias[i]);
+        wet.lens[i].mix = loadf (ParamID::cMix[i], 1.f);
+        wet.lens[i].levelDb = loadf (ParamID::cLevelDb[i]);
+        wet.lens[i].fbAmt = loadf (ParamID::cFbAmt[i]);
+        wet.lens[i].fbHz = loadf (ParamID::cFbHz[i], 220.f);
+        wet.lens[i].dyn = loadf (ParamID::cDyn[i]);
+    }
+}
+
 void fD1STAudioProcessor::configureLenses()
 {
     const bool safe = loadf (ParamID::glob_fb_safe) > 0.5f;
@@ -367,19 +404,18 @@ void fD1STAudioProcessor::configureLenses()
 
 void fD1STAudioProcessor::processFrame (float& L, float& R)
 {
-    const int route = (int) loadf (ParamID::glob_route);
-    const int chmode = (int) loadf (ParamID::glob_chmode);
+    const int route = wet.route;
+    const int chmode = wet.chmode;
     const float blend = blendSmooth.getNextValue();
     const float spread = spreadSmooth.getNextValue();
     const float heat = juce::jlimit (-1.f, 1.f, heatSmooth.getNextValue() + motion.mods.glob_heat);
     const float tone = toneSmooth.getNextValue();
     const float gDrive = globDriveSmooth.getNextValue();
     const float osSr = (float) hostSr * (float) osFactor();
-    const bool color = loadf (ParamID::glob_colorcomp) > 0.5f;
     L *= gDrive;
     R *= gDrive;
 
-    const float pre = color ? -tone : 0.f;
+    const float pre = wet.color ? -tone : 0.f;
     L = fd1st::tilt (L, toneZ[0], fd1st::coeffAt (800.f, osSr), pre);
     R = fd1st::tilt (R, toneZ[1], fd1st::coeffAt (800.f, osSr), pre);
 
@@ -393,9 +429,7 @@ void fD1STAudioProcessor::processFrame (float& L, float& R)
     }
 
     bool ticked[6] = {};
-    bool soloed[6] = {};
-    bool anySolo = false;
-    const int bands = juce::jlimit (1, 6, (int) loadf (ParamID::glob_bands, 3.f));
+    const int bands = wet.bands;
     auto inRoute = [&] (int i) -> bool
     {
         if (route == 3)
@@ -404,34 +438,29 @@ void fD1STAudioProcessor::processFrame (float& L, float& R)
             return i == 0;
         return i <= 1;
     };
-    for (int i = 0; i < 6; ++i)
-    {
-        soloed[i] = loadf (ParamID::cSolo[i]) > 0.5f;
-        if (soloed[i] && inRoute (i))
-            anySolo = true;
-    }
 
     auto go = [&] (int i, float x, int ch) -> float
     {
-        if (anySolo && ! soloed[i])
+        if (wet.anySolo && ! wet.solo[i])
             return route == 3 ? 0.f : x;
         if (! inRoute (i))
             return x;
         if (! ticked[i])
         {
-            float pan = loadf (ParamID::cPan[i]);
+            const auto& ln = wet.lens[i];
+            float pan = ln.pan;
             if (route == 1 || route == 2 || route == 5)
                 pan += (i == 0 ? -spread : spread) * 0.5f;
-            lenses[(size_t) i].tick (loadf (ParamID::cDriveDb[i]) + motion.mods.cDrive[i] * 18.f,
+            lenses[(size_t) i].tick (ln.driveDb + motion.mods.cDrive[i] * 18.f,
                                      heat,
-                                     loadf (ParamID::cDrivePan[i]),
-                                     juce::jlimit (-1.f, 1.f, loadf (ParamID::cBias[i]) + motion.mods.cBias[i]),
-                                     juce::jlimit (0.f, 1.f, loadf (ParamID::cMix[i], 1.f) + motion.mods.cMix[i] * 0.5f),
-                                     loadf (ParamID::cLevelDb[i]) + motion.mods.cLevel[i] * 30.f,
+                                     ln.drivePan,
+                                     juce::jlimit (-1.f, 1.f, ln.bias + motion.mods.cBias[i]),
+                                     juce::jlimit (0.f, 1.f, ln.mix + motion.mods.cMix[i] * 0.5f),
+                                     ln.levelDb + motion.mods.cLevel[i] * 30.f,
                                      pan + motion.mods.cPan[i],
-                                     juce::jlimit (0.f, 1.f, loadf (ParamID::cFbAmt[i]) + motion.mods.cFbAmt[i] * 0.5f),
-                                     loadf (ParamID::cFbHz[i], 220.f),
-                                     juce::jlimit (-1.f, 1.f, loadf (ParamID::cDyn[i]) + motion.mods.cDyn[i]));
+                                     juce::jlimit (0.f, 1.f, ln.fbAmt + motion.mods.cFbAmt[i] * 0.5f),
+                                     ln.fbHz,
+                                     juce::jlimit (-1.f, 1.f, ln.dyn + motion.mods.cDyn[i]));
             ticked[i] = true;
         }
         const float y = lenses[(size_t) i].apply (x, ch);
@@ -499,9 +528,9 @@ void fD1STAudioProcessor::processFrame (float& L, float& R)
         const float fwdL = go (0, L, 0);
         const float fwdR = go (0, R, 1);
         float amt = fbAmtSmooth.getNextValue();
-        if (loadf (ParamID::glob_fb_safe) > 0.5f)
+        if (wet.safe)
             amt = juce::jmin (0.85f, amt);
-        const float del = cavityTimeSec() * (float) hostSr * (float) osFactor();
+        const float del = wet.cavDel;
         const float fbL = fd1st::readHermite (cavity[0].data(), cavCap, cavW, del);
         const float fbR = fd1st::readHermite (cavity[1].data(), cavCap, cavW, del);
         float inL = L + amt * fbL;
@@ -509,12 +538,11 @@ void fD1STAudioProcessor::processFrame (float& L, float& R)
         inL = go (1, inL, 0);
         inR = go (1, inR, 1);
         const float amtC = compSmooth.getNextValue();
-        const bool hpf = loadf (ParamID::glob_comp_hpf) > 0.5f;
-        inL = cavCompL.process (inL, amtC, osSr, hpf);
-        inR = cavCompR.process (inR, amtC, osSr, hpf);
+        inL = cavCompL.process (inL, amtC, osSr, wet.hpf);
+        inR = cavCompR.process (inR, amtC, osSr, wet.hpf);
         inL = fd1st::hp1 (inL, cavHp[0], fd1st::coeffAt (15.f, osSr));
         inR = fd1st::hp1 (inR, cavHp[1], fd1st::coeffAt (15.f, osSr));
-        if (loadf (ParamID::glob_fb_safe) > 0.5f)
+        if (wet.safe)
         {
             const float pk = fd1st::dbToLin (-0.3f);
             inL = juce::jlimit (-pk, pk, inL);
@@ -530,20 +558,19 @@ void fD1STAudioProcessor::processFrame (float& L, float& R)
     if (route != 5)
     {
         float amt = fbAmtSmooth.getNextValue();
-        if (loadf (ParamID::glob_fb_safe) > 0.5f)
+        if (wet.safe)
             amt = juce::jmin (0.85f, amt);
         if (amt > 0.0001f)
         {
-            const float del = cavityTimeSec() * (float) hostSr * (float) osFactor();
+            const float del = wet.cavDel;
             const float fbL = fd1st::readHermite (cavity[0].data(), cavCap, cavW, del);
             const float fbR = fd1st::readHermite (cavity[1].data(), cavCap, cavW, del);
             const float amtC = compSmooth.getNextValue();
-            const bool hpf = loadf (ParamID::glob_comp_hpf) > 0.5f;
-            float wL = cavCompL.process (oL + amt * fbL, amtC, osSr, hpf);
-            float wR = cavCompR.process (oR + amt * fbR, amtC, osSr, hpf);
+            float wL = cavCompL.process (oL + amt * fbL, amtC, osSr, wet.hpf);
+            float wR = cavCompR.process (oR + amt * fbR, amtC, osSr, wet.hpf);
             wL = fd1st::hp1 (wL, cavHp[0], fd1st::coeffAt (15.f, osSr));
             wR = fd1st::hp1 (wR, cavHp[1], fd1st::coeffAt (15.f, osSr));
-            if (loadf (ParamID::glob_fb_safe) > 0.5f)
+            if (wet.safe)
             {
                 const float pk = fd1st::dbToLin (-0.3f);
                 wL = juce::jlimit (-pk, pk, wL);
@@ -562,11 +589,10 @@ void fD1STAudioProcessor::processFrame (float& L, float& R)
     }
 
     {
-        const float amtC = loadf (ParamID::glob_comp);
-        const bool hpf = loadf (ParamID::glob_comp_hpf) > 0.5f;
+        const float amtC = wet.globComp;
         const float det = juce::jmax (std::abs (oL), std::abs (oR));
         float dL = oL, dR = oR;
-        if (hpf)
+        if (wet.hpf)
         {
             dL = fd1st::hp1 (oL, outCompL.detZ, fd1st::coeffAt (120.f, osSr));
             dR = fd1st::hp1 (oR, outCompR.detZ, fd1st::coeffAt (120.f, osSr));
@@ -604,6 +630,7 @@ void fD1STAudioProcessor::processWet (juce::dsp::AudioBlock<float> block)
     const int chans = (int) block.getNumChannels();
     configureLenses();
     updatePrism();
+    cacheWet();
     globDriveSmooth.setTargetValue (fd1st::dbToLin (loadf (ParamID::glob_drive_db)));
     outSmooth.setTargetValue (juce::Decibels::decibelsToGain (loadf (ParamID::glob_out_db)));
     blendSmooth.setTargetValue (loadf (ParamID::glob_blend, 0.5f));
@@ -630,7 +657,7 @@ void fD1STAudioProcessor::applyMotion (float dt, float mainL, float mainR, float
     const float mainRms = std::sqrt (mainL * mainL + mainR * mainR);
     const float scRms = std::sqrt (scL_ * scL_ + scR_ * scR_);
     motion.pullFromTree();
-    motion.tick (dt, (float) hostBpm(), loadf (ParamID::glob_motion, 1.f), mainRms, scRms, z);
+    motion.tick (dt, (float) cachedBpm, loadf (ParamID::glob_motion, 1.f), mainRms, scRms, z);
     mixMod.store (motion.mods.glob_mix * 0.5f, std::memory_order_relaxed);
 }
 
@@ -664,7 +691,9 @@ void fD1STAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     auto main = getBusBuffer (buffer, true, 0);
     const int n = main.getNumSamples();
     const int chans = juce::jmin (2, main.getNumChannels());
-    ensureHostSize (n);
+    cachedBpm = hostBpm();
+    if (n > hostBlock)
+        ensureHostSize (n);
 
     if (getBusCount (true) > 1)
     {
