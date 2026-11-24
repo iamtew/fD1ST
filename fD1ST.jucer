@@ -4,7 +4,6 @@
               projectType="audioplug" pluginAUIsSandboxSafe="1" pluginManufacturer="Stupid Audio"
               pluginManufacturerCode="Ssys" pluginCode="Fd1s" cppLanguageStandard="17"
               pluginFormats="buildVST3,buildStandalone"
-              pluginCharacteristicsValue="pluginWantsMidiIn"
               pluginVST3Category="Fx|Distortion"
               useAppConfig="0" addUsingNamespaceToJuceHeader="1" id="fd1sPrj1"
               jucerFormatVersion="1">
@@ -18,22 +17,6 @@
       <FILE id="editH01" name="PluginEditor.h" compile="0" resource="0" file="src/PluginEditor.h"/>
       <FILE id="editC01" name="PluginEditor.cpp" compile="1" resource="0"
             file="src/PluginEditor.cpp"/>
-      <GROUP id="dspGrp01" name="dsp">
-        <FILE id="nmsH001" name="Names.h" compile="0" resource="0" file="src/dsp/Names.h"/>
-        <FILE id="shpH001" name="Shaper.h" compile="0" resource="0" file="src/dsp/Shaper.h"/>
-        <FILE id="clpH001" name="Clip.h" compile="0" resource="0" file="src/dsp/Clip.h"/>
-        <FILE id="oneH001" name="OnePole.h" compile="0" resource="0" file="src/dsp/OnePole.h"/>
-        <FILE id="biqH001" name="Biquad.h" compile="0" resource="0" file="src/dsp/Biquad.h"/>
-        <FILE id="cmpH001" name="Comp.h" compile="0" resource="0" file="src/dsp/Comp.h"/>
-        <FILE id="firH001" name="FirXover.h" compile="0" resource="0" file="src/dsp/FirXover.h"/>
-        <FILE id="styH001" name="Style.h" compile="0" resource="0" file="src/dsp/Style.h"/>
-        <FILE id="motH001" name="Motion.h" compile="0" resource="0" file="src/dsp/Motion.h"/>
-        <FILE id="lnsH001" name="LensProcessor.h" compile="0" resource="0"
-              file="src/dsp/LensProcessor.h"/>
-      </GROUP>
-      <GROUP id="preGrp01" name="presets">
-        <FILE id="facH001" name="Factory.h" compile="0" resource="0" file="src/presets/Factory.h"/>
-      </GROUP>
       <GROUP id="prmGrp01" name="parameters">
         <FILE id="pidH001" name="ParameterIDs.h" compile="0" resource="0" file="src/parameters/ParameterIDs.h"/>
         <FILE id="plyH001" name="ParameterLayout.h" compile="0" resource="0"
@@ -41,8 +24,6 @@
       </GROUP>
       <GROUP id="uiGrp01" name="ui">
         <FILE id="thmH001" name="Theme.h" compile="0" resource="0" file="src/ui/Theme.h"/>
-        <FILE id="focH001" name="FocusView.h" compile="0" resource="0" file="src/ui/FocusView.h"/>
-        <FILE id="pthH001" name="PathView.h" compile="0" resource="0" file="src/ui/PathView.h"/>
       </GROUP>
     </GROUP>
   </MAINGROUP>
@@ -58,12 +39,10 @@
     <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
-    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
-    <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
   </MODULES>
   <EXPORTFORMATS>
     <VS2022 targetFolder="Builds/VisualStudio2022" bigIcon="logoPng1" smallIcon="logoPng1">
@@ -85,8 +64,6 @@
         <MODULEPATH id="juce_graphics" path="C:\Users\Mikael\JUCE\modules"/>
         <MODULEPATH id="juce_gui_basics" path="C:\Users\Mikael\JUCE\modules"/>
         <MODULEPATH id="juce_gui_extra" path="C:\Users\Mikael\JUCE\modules"/>
-        <MODULEPATH id="juce_dsp" path="C:\Users\Mikael\JUCE\modules"/>
-        <MODULEPATH id="juce_opengl" path="C:\Users\Mikael\JUCE\modules"/>
       </MODULEPATHS>
     </VS2022>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile" bigIcon="logoPng1" smallIcon="logoPng1">
@@ -108,8 +85,6 @@
         <MODULEPATH id="juce_graphics" path="C:\Users\Mikael\JUCE\modules"/>
         <MODULEPATH id="juce_gui_basics" path="C:\Users\Mikael\JUCE\modules"/>
         <MODULEPATH id="juce_gui_extra" path="C:\Users\Mikael\JUCE\modules"/>
-        <MODULEPATH id="juce_dsp" path="C:\Users\Mikael\JUCE\modules"/>
-        <MODULEPATH id="juce_opengl" path="C:\Users\Mikael\JUCE\modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
     <XCODE_MAC targetFolder="Builds/MacOSX" bigIcon="logoPng1" smallIcon="logoPng1"
@@ -136,8 +111,6 @@
         <MODULEPATH id="juce_graphics" path="C:\Users\Mikael\JUCE\modules"/>
         <MODULEPATH id="juce_gui_basics" path="C:\Users\Mikael\JUCE\modules"/>
         <MODULEPATH id="juce_gui_extra" path="C:\Users\Mikael\JUCE\modules"/>
-        <MODULEPATH id="juce_dsp" path="C:\Users\Mikael\JUCE\modules"/>
-        <MODULEPATH id="juce_opengl" path="C:\Users\Mikael\JUCE\modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>
