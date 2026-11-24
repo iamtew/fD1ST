@@ -71,6 +71,7 @@ private:
     void maybeSelfTest();
     void updateOsRate();
     void updatePrism();
+    void ensureHostSize (int n);
     float cavityTimeSec() const;
     double hostBpm() const;
     void prismSplit (int split, float inL, float inR, float osSr, float& loL, float& loR, float& hiL, float& hiR);

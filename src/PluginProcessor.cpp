@@ -118,11 +118,12 @@ void fD1STAudioProcessor::updateOsRate()
     lastLin = linphaseOn() ? 1 : 0;
 }
 
-void fD1STAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void fD1STAudioProcessor::ensureHostSize (int n)
 {
-    hostSr = sampleRate > 1.0 ? sampleRate : 48000.0;
-    hostBlock = juce::jmax (32, samplesPerBlock);
-
+    n = juce::jmax (32, n);
+    if (n <= hostBlock && dryBuf.getNumSamples() >= n)
+        return;
+    hostBlock = juce::jmax (hostBlock, n);
     auto initOs = [this] (Os& o)
     {
         o.initProcessing ((size_t) hostBlock);
@@ -134,6 +135,16 @@ void fD1STAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     initOs (os2f);
     initOs (os8f);
     initOs (os32f);
+    if (dryBuf.getNumSamples() < hostBlock)
+        dryBuf.setSize (2, juce::jmax (4096, hostBlock), false, false, true);
+}
+
+void fD1STAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+{
+    hostSr = sampleRate > 1.0 ? sampleRate : 48000.0;
+    hostBlock = 0;
+    dryBuf.setSize (0, 0);
+    ensureHostSize (samplesPerBlock);
 
     const double osSr = hostSr * (double) osFactor();
     juce::dsp::ProcessSpec spec { osSr, (juce::uint32) (hostBlock * 32), 2 };
@@ -168,7 +179,8 @@ void fD1STAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     globDriveSmooth.setCurrentAndTargetValue (1.f);
     blendSmooth.setCurrentAndTargetValue (0.5f);
 
-    dryBuf.setSize (2, juce::jmax (4096, hostBlock), false, false, true);
+    if (dryBuf.getNumSamples() < hostBlock)
+        dryBuf.setSize (2, juce::jmax (4096, hostBlock), false, false, true);
     lastOs = osId();
     lastLin = linphaseOn() ? 1 : 0;
     osLatencySamples = osLatency();
@@ -592,7 +604,6 @@ void fD1STAudioProcessor::processWet (juce::dsp::AudioBlock<float> block)
     const int chans = (int) block.getNumChannels();
     configureLenses();
     updatePrism();
-    motion.pullFromTree();
     globDriveSmooth.setTargetValue (fd1st::dbToLin (loadf (ParamID::glob_drive_db)));
     outSmooth.setTargetValue (juce::Decibels::decibelsToGain (loadf (ParamID::glob_out_db)));
     blendSmooth.setTargetValue (loadf (ParamID::glob_blend, 0.5f));
@@ -601,13 +612,11 @@ void fD1STAudioProcessor::processWet (juce::dsp::AudioBlock<float> block)
     fbAmtSmooth.setTargetValue (loadf (ParamID::glob_fb_amt));
     compSmooth.setTargetValue (loadf (ParamID::glob_comp));
     toneSmooth.setTargetValue (loadf (ParamID::glob_tone));
-    const float dt = 1.f / ((float) hostSr * (float) osFactor());
 
     for (int i = 0; i < n; ++i)
     {
         float L = block.getSample (0, i);
         float R = chans > 1 ? block.getSample (1, i) : L;
-        applyMotion (dt, L, R, scL, scR);
         processFrame (L, R);
         block.setSample (0, i, L);
         if (chans > 1)
@@ -620,6 +629,7 @@ void fD1STAudioProcessor::applyMotion (float dt, float mainL, float mainR, float
     float z[6] {};
     const float mainRms = std::sqrt (mainL * mainL + mainR * mainR);
     const float scRms = std::sqrt (scL_ * scL_ + scR_ * scR_);
+    motion.pullFromTree();
     motion.tick (dt, (float) hostBpm(), loadf (ParamID::glob_motion, 1.f), mainRms, scRms, z);
     mixMod.store (motion.mods.glob_mix * 0.5f, std::memory_order_relaxed);
 }
@@ -654,6 +664,7 @@ void fD1STAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     auto main = getBusBuffer (buffer, true, 0);
     const int n = main.getNumSamples();
     const int chans = juce::jmin (2, main.getNumChannels());
+    ensureHostSize (n);
 
     if (getBusCount (true) > 1)
     {
@@ -684,6 +695,13 @@ void fD1STAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         inP = juce::jmax (inP, main.getMagnitude (ch, 0, copyN));
     }
     inPeak.store (inP, std::memory_order_relaxed);
+
+    {
+        const float dt = (float) (n / juce::jmax (1.0, hostSr));
+        const float L0 = chans > 0 ? dryBuf.getSample (0, 0) : 0.f;
+        const float R0 = chans > 1 ? dryBuf.getSample (1, 0) : L0;
+        applyMotion (dt, L0, R0, scL, scR);
+    }
 
     juce::dsp::AudioBlock<float> block (main);
     if (auto* o = currentOs())
@@ -1110,6 +1128,28 @@ int fD1STAudioProcessor::runSelfTest()
         processBlock (b, midi);
         if (lensApplyCount[1].load() != 0)
             ++fail;
+    }
+
+    // 19 Init + OS Good: consecutive sine blocks keep RMS (no chop)
+    {
+        fd1st::applyInit (apvts);
+        prepareToPlay (sr, n);
+        juce::AudioBuffer<float> b (2, n);
+        float ref = 0;
+        for (int k = 0; k < 16; ++k)
+        {
+            fillSine (b, 200.f, 0.25f);
+            processBlock (b, midi);
+            const float r = rms (b);
+            if (k == 4)
+                ref = r;
+            if (k >= 4)
+            {
+                const float db = 20.f * std::log10 ((r + 1.0e-8f) / (ref + 1.0e-8f));
+                if (std::abs (db) > 1.f)
+                    ++fail;
+            }
+        }
     }
 
     return fail == 0 ? 0 : 1;
