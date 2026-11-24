@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>&fnof;D1ST — DIST distortion FX</title>
-  <meta name="description" content="&fnof;D1ST is DIST, a stereo distortion and saturation effect. Six lenses, 34 styles, Path, Focus, Motion. Watch the signal break. VST3.">
+  <meta name="description" content="&fnof;D1ST is DIST, a stereo distortion and saturation effect. Rewrite in progress. Watch the signal break. VST3.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Stupid Audio">
   <meta property="og:title" content="&fnof;D1ST — DIST distortion FX">
-  <meta property="og:description" content="&fnof;D1ST is DIST, a stereo distortion and saturation effect. Six lenses, 34 styles, Path, Focus, Motion. Watch the signal break. VST3.">
+  <meta property="og:description" content="&fnof;D1ST is DIST, a stereo distortion and saturation effect. Rewrite in progress. Watch the signal break. VST3.">
   <meta property="og:url" content="https://iamtew.github.io/fD1ST/">
   <meta property="og:image" content="https://iamtew.github.io/fD1ST/ogimage-fD1ST.png">
   <meta property="og:image:width" content="1200">
@@ -26,12 +26,6 @@
       <svg class="icon" aria-hidden="true"><use href="icons.svg#menu"></use></svg>
     </button>
     <nav id="site-nav">
-      <a href="#drive">Drive</a>
-      <a href="#lens">Lens</a>
-      <a href="#cavity">Cavity</a>
-      <a href="#comp">Comp</a>
-      <a href="#clip">Clip</a>
-      <a href="#out">Out</a>
       <a href="docs.html">Manual</a>
       <a href="https://audio.stupid.systems/">Stupid Audio</a>
     </nav>
@@ -46,8 +40,8 @@
           <p class="tag">Watch the signal break.</p>
         </div>
       </div>
-      <p>&fnof;D1ST is DIST, a stereo distortion and saturation effect. Six lenses on a living path, 34 styles, Heat Spread Motion, Superb 32×, linear phase, 48 factory programs.</p>
-      <p>It is part of <a href="https://audio.stupid.systems/">Stupid Audio</a>, the family of free plugins.</p>
+      <p>&fnof;D1ST is DIST, a stereo distortion and saturation effect. Rewrite in progress. Forest Depth chrome. The current binary is a stereo thru stub.</p>
+      <p>It is part of <a href="https://audio.stupid.systems/">Stupid Audio</a>, the family of free plugins. Not on the catalog yet.</p>
       <p class="actions">
         <button type="button" class="download" data-dl-open>
           <svg class="icon" aria-hidden="true"><use href="icons.svg#download"></use></svg>
@@ -60,72 +54,6 @@
       </p>
       <p class="meta">VST3. Windows, Linux, and Mac.</p>
     </div>
-
-    <section id="drive" class="feature">
-      <div>
-        <h2>Drive</h2>
-        <p>Drive is the front of the Path. When you open DIST, Focus lands here: input Drive, Tone, Color, and stereo versus mid/side. This is how hard you shove the whole chain before any lens starts bending the waveform.</p>
-        <p>Drive is linear gain into the first lens. Tone is a tilt around 800 Hz. Color compensation puts the opposite tilt after the shapers so you can add grit without a huge bass or treble swing. The Transfer plot still shows lens 0 in One — that is the actual shaper, even while Drive is focused.</p>
-      </div>
-      <button type="button" class="shot-open" data-shot="drive.png" data-shot-alt="&fnof;D1ST Drive Focus">
-        <img class="shot" src="drive.png" alt="&fnof;D1ST Drive Focus">
-      </button>
-    </section>
-
-    <section id="lens" class="feature">
-      <div>
-        <h2>Lens</h2>
-        <p>A lens is one distortion stage. Click a node on the Path and Focus becomes that lens: On, Mute, Solo, Style, the pre-shaper filter, Drive, Bias, Mix, post EQ, and Ring.</p>
-        <p>Style picks one of 34 waveshapers. The Transfer plot is the I/O curve — sage is dry, emerald is wet — so you can see the signal break. Mix is how much of this lens you keep. One uses a single lens; Stack, Split, Prism, Axis, and Cavity add more.</p>
-      </div>
-      <button type="button" class="shot-open" data-shot="lens.png" data-shot-alt="&fnof;D1ST Lens Focus">
-        <img class="shot" src="lens.png" alt="&fnof;D1ST Lens Focus">
-      </button>
-    </section>
-
-    <section id="cavity" class="feature">
-      <div>
-        <h2>Cavity</h2>
-        <p>Cavity is global delay feedback after the lenses. It is not a full echo product — it is a cavity the grit can ring in. Amount is how much comes back. Time, Sync, and Note set the period. Safe is on by default so the loop does not eat the session.</p>
-        <p>The Path node pulses at the delay period; its size follows Amount. The same compressor knob as Comp sits in this loop, so the repeats breathe with the output. Route Cavity also sends a second lens into the feedback path.</p>
-      </div>
-      <button type="button" class="shot-open" data-shot="cavity.png" data-shot-alt="&fnof;D1ST Cavity Focus">
-        <img class="shot" src="cavity.png" alt="&fnof;D1ST Cavity Focus">
-      </button>
-    </section>
-
-    <section id="comp" class="feature">
-      <div>
-        <h2>Comp</h2>
-        <p>Comp is one amount for two jobs: an output compressor after the cavity, and the compressor inside the cavity loop. One number on purpose, so the repeats breathe with the mix.</p>
-        <p>Threshold is −18 dBFS. Ratio climbs with the knob. Attack is 5 ms, release 80 ms. A 120 Hz high-pass on the detector keeps kicks from pumping the whole mix unless you turn that off. The Path node squeezes in height with gain reduction, so you can see the squeeze without a separate meter.</p>
-      </div>
-      <button type="button" class="shot-open" data-shot="comp.png" data-shot-alt="&fnof;D1ST Comp Focus">
-        <img class="shot" src="comp.png" alt="&fnof;D1ST Comp Focus">
-      </button>
-    </section>
-
-    <section id="clip" class="feature">
-      <div>
-        <h2>Clip</h2>
-        <p>Clip is a hard clip at the rail after Out. No extra knobs. Peaks die here so the host does not see illegal samples from the wreck.</p>
-        <p>Focusing Clip is a reminder, not a workbench. Drive, Mix, and the lenses are the controls. A little softening at the rail keeps the clip from being a digital brick.</p>
-      </div>
-      <button type="button" class="shot-open" data-shot="clip.png" data-shot-alt="&fnof;D1ST Clip Focus">
-        <img class="shot" src="clip.png" alt="&fnof;D1ST Clip Focus">
-      </button>
-    </section>
-
-    <section id="out" class="feature">
-      <div>
-        <h2>Out</h2>
-        <p>Out is the last Path node before the clip rail: Mix, Out, and Blend. Mix is wet/dry after Listen. Out is output level.</p>
-        <p>Blend is how far Stack, Split, Axis, and Cavity lean into the extra lenses. In One it still sits here; it does not invent a second lens. Turn Mix down when you want less grit without changing Drive.</p>
-      </div>
-      <button type="button" class="shot-open" data-shot="out.png" data-shot-alt="&fnof;D1ST Out Focus">
-        <img class="shot" src="out.png" alt="&fnof;D1ST Out Focus">
-      </button>
-    </section>
   </main>
 
   <dialog id="dl" class="dl-dialog" aria-labelledby="dl-title">

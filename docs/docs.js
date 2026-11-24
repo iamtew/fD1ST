@@ -1,16 +1,7 @@
 (function () {
   var pages = [
     { id: "overview", title: "Overview", icon: "book" },
-    { id: "listen", title: "Listen", icon: "settings" },
-    { id: "drive", title: "Drive", icon: "sine-wave" },
-    { id: "lens", title: "Lens", icon: "spark" },
-    { id: "cavity", title: "Cavity", icon: "pages" },
-    { id: "comp", title: "Comp", icon: "eq" },
-    { id: "clip", title: "Clip", icon: "square-wave" },
-    { id: "out", title: "Out", icon: "settings" },
     { id: "spec", title: "Spec", icon: "page", group: "Internals", src: "SPEC.md" },
-    { id: "architecture", title: "Architecture", icon: "cpu", group: "Internals", src: "ARCHITECTURE.md" },
-    { id: "dsp", title: "DSP notes", icon: "square-wave", group: "Internals", src: "DSP_NOTES.md" },
     { id: "credits", title: "Credits", icon: "info", group: "About" }
   ];
 
@@ -76,10 +67,7 @@
       var note = href.match(/notes\.html\?doc=([A-Z0-9_.]+)/i);
       if (note) {
         var map = {
-          "SPEC.md": "spec",
-          "ARCHITECTURE.md": "architecture",
-          "DSP_NOTES.md": "dsp",
-          "MANUAL.md": "overview"
+          "SPEC.md": "spec"
         };
         var dest = map[note[1]];
         if (dest) link.setAttribute("href", "#" + dest);

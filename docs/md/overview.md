@@ -1,11 +1,7 @@
-# Watch the signal break
+# Overview
 
-fD1ST is DIST, a stereo distortion and saturation effect.
+**fD1ST** is DIST. Spoken name DIST. Never “fist.”
 
-Path, Focus, Motion. 34 styles, six routes, Superb 16×, linear phase, 48 factory programs.
+This is a rewrite. The plugin is a stereo thru stub with Forest Depth chrome and an Out gain. Product DSP is TBD.
 
-Bypass copies input to output. Keys: W wet, Shift+D dry, E delta, C caustic.
-
-This is the user book. Internals live under Spec, Architecture, and DSP notes.
-
-VST3. Windows, Linux, and Mac.
+Spec: [SPEC.md](../SPEC.md).

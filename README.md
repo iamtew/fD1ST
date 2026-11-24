@@ -4,7 +4,7 @@
 
 **fD1ST** is DIST, a stereo distortion / saturation effect. Spoken name DIST. The leading *f* is fx. Never “fist.” Tagline: **Watch the signal break.**
 
-One through Cavity, 34 styles, Path/Focus/Motion, 16× Superb, linear-phase OS, 48 factory programs. Work in progress for the catalog.
+Rewrite in progress. Forest Depth chrome. Step 0 is stereo thru plus Out. Work in progress for the catalog.
 
 `just self-test` runs the standalone with `--self-test`.
 
@@ -28,5 +28,3 @@ The MSI installs the VST3 into `Common Files\VST3` by default; the folder can be
 The Mac zip is ad-hoc signed, not notarized. Gatekeeper blocks it until you right-click Open, or run `xattr -dr com.apple.quarantine` on the `.vst3`. The Linux build uses the system ALSA, FreeType, fontconfig, and X11 libraries.
 
 `just build-dist` on Windows writes the VST3 zip and the MSI. Building the MSI needs the .NET 8 SDK.
-
-`just docs-screenshots` overwrites `docs/drive.png`, `lens.png`, `cavity.png`, `comp.png`, `clip.png`, and `out.png`. Needs a debug standalone (`just build-debug`) and an interactive desktop.

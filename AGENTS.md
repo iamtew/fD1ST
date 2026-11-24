@@ -2,14 +2,14 @@
 
 Spec: [docs/SPEC.md](docs/SPEC.md).
 
-DIST distortion / saturation FX. Spoken name **DIST**. Never “fist”. VST3 + Standalone. Part of Stupid Audio; sister of fR3Z0 and fN0B. Work in progress — not on the catalog until the Meat Bag asks.
+DIST distortion / saturation FX. Spoken name **DIST**. Never “fist”. VST3 + Standalone. Part of Stupid Audio; sister of fR3Z0 and fN0B.
 
-Build order in the spec. This tree is past **step 9**: DSP path, Focus viz, Motion, factory programs, `--self-test`, Superb 16×, linphase, LR Prism. Catalog off until asked.
+**Rewrite in progress.** Step 0 stub only (stereo thru + Forest Depth). Not on the catalog until the Meat Bag asks. Do not rebuild the old Path / Focus / Motion product unless asked.
 
 ## Stack
 - JUCE (Projucer workflow only – no CMake)
 - C++17, real-time safe: no allocations, no locks, no system calls in processBlock
-- APVTS for all host parameters (globals + six lenses + xovers). Motion/Wiring stay ValueTree later.
+- APVTS for host parameters
 - Just + justfile
 - JUCE from `%USERPROFILE%\JUCE`
 - Clanker never modifies `assets/logo.png` or `assets/logo.af`. Meat Bag owns the Affinity export; that PNG is source of truth. Only derived files: `just docs-logo` → `docs/logo.png`, `just icon` → `Builds/VisualStudio2022/icon.ico`.
@@ -18,8 +18,8 @@ Build order in the spec. This tree is past **step 9**: DSP path, Focus viz, Moti
 src/
  PluginProcessor.h/.cpp
  PluginEditor.h/.cpp
- dsp/ (Names, Shaper, Style, LensProcessor, Motion, …)
- parameters/ presets/ ui/ (FocusView, PathView, Theme)
+ parameters/
+ ui/Theme.h
 tests/fd1st_check.cpp
 docs/
 justfile
